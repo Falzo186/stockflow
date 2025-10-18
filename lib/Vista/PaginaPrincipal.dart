@@ -1,9 +1,10 @@
 // archivo: PaginaPrincipal.dart
 
 import 'package:flutter/material.dart';
-import 'package:stockflow/Vista/VistaEscaner.dart';
 import 'package:stockflow/Vista/VistaHomeItinerario.dart';
 import 'package:stockflow/Vista/VistaPerfil.dart';
+
+import 'PaginaEscaner.dart';
 // Importa tus vistas (asegúrate de que las rutas sean correctas)
 
 class PaginaPrincipal extends StatefulWidget {
@@ -19,7 +20,7 @@ class _PaginaPrincipalState extends State<PaginaPrincipal> {
   // --- 1. REORDENAMOS LAS VISTAS ---
   // Ahora el índice 1 (centro) es el Itinerario
   static const List<Widget> _opcionesDeVista = <Widget>[
-    VistaEscaner(),         // Índice 0
+    PaginaEscaner(),         // Índice 0
     VistaHomeItinerario(),  // Índice 1
     VistaPerfil(),          // Índice 2
   ];

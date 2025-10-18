@@ -1,27 +1,41 @@
 class Ubicacion {
-  final String id;
-  final String area;
+  final String id; // ej. "01012"
+  final String? descripcion;
+  final String? area;
+  final DateTime? ultimoServicio;
+  final bool over;
+  final bool pop;
+  final bool estorbo;
 
-  Ubicacion({ required this.id, required this.area });
+  Ubicacion({
+    required this.id,
+    this.descripcion,
+    this.area,
+    this.ultimoServicio,
+    this.over = false,
+    this.pop = false,
+    this.estorbo = false,
+  });
 
-  // Los getters para "traducir" el ID se mantienen igual
-  String get pasillo => id.substring(0, 2);
-  bool get esCabecera => id.substring(2, 4).toUpperCase() == 'CA';
-  String get nivel {
-    if (esCabecera) return 'Cabecera';
-    switch (id.substring(2, 3)) {
-      case '0': return 'Punto de Venta';
-      case '1': return 'Over Anaquel';
-      default: return 'N/A';
-    }
-  }
-  String get bahia => esCabecera ? '--' : id.substring(3, 5);
-  String get cara => esCabecera ? id.substring(4, 5) : '--';
-  String get descripcionCompleta {
-    if (esCabecera) {
-      return 'Pasillo: $pasillo, Nivel: $nivel, Cara: $cara';
-    } else {
-      return 'Pasillo: $pasillo, Nivel: $nivel, Bahía: $bahia';
-    }
-  }
+  factory Ubicacion.fromJson(Map<String, dynamic> json) => Ubicacion(
+        id: json['id'],
+        descripcion: json['descripcion'],
+        area: json['area'],
+        ultimoServicio: json['ultimo_servicio'] != null
+            ? DateTime.parse(json['ultimo_servicio'])
+            : null,
+        over: json['over'] ?? false,
+        pop: json['pop'] ?? false,
+        estorbo: json['estorbo'] ?? false,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'descripcion': descripcion,
+        'area': area,
+        'ultimo_servicio': ultimoServicio?.toIso8601String(),
+        'over': over,
+        'pop': pop,
+        'estorbo': estorbo,
+      };
 }

@@ -3,7 +3,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:stockflow/Vista/PaginaDetalleProducto.dart';
 
 class VistaEscaner extends StatefulWidget {
   const VistaEscaner({super.key});
@@ -52,11 +51,11 @@ class _VistaEscanerState extends State<VistaEscaner>
     _codigoEscaneado = '';
 
     // Navegamos a la página de detalles, pasándole el SKU
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PaginaDetalleProducto(sku: sku),
-      ),
-    );
+    // Navigator.of(context).push(
+    //   MaterialPageRoute(
+    //     builder: (context) => PaginaDetalleProducto(sku: sku),
+    //   ),
+    // );
   }
 
   @override

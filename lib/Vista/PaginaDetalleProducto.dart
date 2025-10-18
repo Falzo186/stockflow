@@ -1,36 +1,22 @@
 // archivo: pagina_detalle_producto.dart
 
 import 'package:flutter/material.dart';
-import 'package:stockflow/BaseDeDatosLocal/BaseDatos.dart';
+import 'package:stockflow/Modelo/ProductoUbicacion.dart';
 import 'package:stockflow/Vista/PaginaUbicaciones.dart';
 import '../Modelo/Producto.dart';
-import '../Modelo/StockUbicacion.dart';
 
 class PaginaDetalleProducto extends StatelessWidget {
-  final String sku;
-  
-  // Creamos una instancia de nuestra "base de datos"
-  final BaseDeDatosSimulada db = BaseDeDatosSimulada();
+  final Producto producto;
+  final List<ProductoUbicacion> listaDeStock;
 
-  PaginaDetalleProducto({super.key, required this.sku});
+  PaginaDetalleProducto({super.key, required this.producto, required this.listaDeStock});
 
   @override
   Widget build(BuildContext context) {
-    // --- REALIZAMOS LAS CONSULTAS A LA "BASE DE DATOS" ---
-    final producto = db.buscarProductoPorSku(sku);
-    final stockTotal = db.calcularExistenciaTotal(sku);
-    final listaDeStock = db.obtenerStockParaProducto(sku);
-
     const Color colorFondo = Color(0xFFEFEFEF);
     const Color colorTarjeta = Color(0xFFD5D8DC);
 
-    // Manejo por si el producto no se encuentra
-    if (producto == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text("Error")),
-        body: const Center(child: Text("Producto no encontrado")),
-      );
-    }
+    final stockTotal = listaDeStock.fold<int>(0, (total, stock) => total + stock.cantidad);
 
     return Scaffold(
       backgroundColor: colorFondo,
@@ -46,20 +32,19 @@ class PaginaDetalleProducto extends StatelessWidget {
           _crearTarjetaProducto(producto, colorTarjeta),
           const SizedBox(height: 16),
           _crearTarjetaInfo(producto, "Informacion General", [
-            "Costos: \$${producto.costo.toStringAsFixed(2)}",
-            "Existencia: $stockTotal u/d", // Usamos el total calculado
+            "Costos: \$${producto.precio.toStringAsFixed(2)}",
+            "Existencia: $stockTotal u/d",
           ], colorTarjeta),
           const SizedBox(height: 16),
           _crearTarjetaInfo(producto, "Descripcion", [producto.descripcion], colorTarjeta),
           const SizedBox(height: 16),
-          // Le pasamos la lista de stock a la tarjeta de ubicaciones
-          _crearTarjetaUbicaciones(context, producto, listaDeStock, colorTarjeta),
+          _crearTarjetaUbicaciones(context, colorTarjeta),
         ],
       ),
     );
   }
 
-  Widget _crearTarjetaUbicaciones(BuildContext context, Producto producto, List<StockUbicacion> stocks, Color color) {
+  Widget _crearTarjetaUbicaciones(BuildContext context, Color color) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -70,11 +55,10 @@ class PaginaDetalleProducto extends StatelessWidget {
           children: [
             const Text("Ubicaciones:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const Divider(),
-            // Mostramos un resumen de las ubicaciones y sus cantidades
-            ...stocks.take(2).map((stock) {
-              final ubicacion = db.buscarUbicacionPorId(stock.idUbicacion);
-              if (ubicacion == null) return const SizedBox.shrink();
-              return Text('${ubicacion.descripcionCompleta} (${stock.cantidad} pzs)');
+            ...listaDeStock.take(2).map((listaDeStock) {
+              return Text(
+                'Ubicación: ${listaDeStock.ubicacionId} - Nivel: ${listaDeStock.nivel} (${listaDeStock.cantidad} pzs)',
+              );
             }).toList(),
             const SizedBox(height: 10),
             Align(
@@ -82,11 +66,10 @@ class PaginaDetalleProducto extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute(
-                    // Le pasamos a la siguiente página la info que ya tenemos
-                    builder: (context) => PaginaUbicaciones(producto: producto, listaDeStock: stocks),
+                    builder: (context) => PaginaUbicaciones(producto: producto, listaDeStock: listaDeStock),
                   ));
                 },
-                child: const Text('Ver Mas...'),
+                child: const Text('Ver Más...'),
               ),
             ),
           ],
@@ -95,8 +78,7 @@ class PaginaDetalleProducto extends StatelessWidget {
     );
   }
 
-  // El resto de widgets no necesitan cambios significativos
- Widget _crearTarjetaProducto(Producto producto, Color color) { /* ...código sin cambios... */ 
+  Widget _crearTarjetaProducto(Producto producto, Color color) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -105,15 +87,13 @@ class PaginaDetalleProducto extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 80, height: 80,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                image: producto.urlImagen.isNotEmpty 
-                  ? DecorationImage(image: NetworkImage(producto.urlImagen), fit: BoxFit.cover)
-                  : null,
               ),
-              child: producto.urlImagen.isEmpty ? const Icon(Icons.lightbulb_outline, size: 40) : null,
+              child: const Icon(Icons.shopping_bag, size: 40, color: Colors.grey),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -121,7 +101,7 @@ class PaginaDetalleProducto extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Producto: ${producto.nombre}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text('SKU: ${producto.sku}'),
+                  Text('SKU: ${producto.id}'),
                 ],
               ),
             ),
@@ -130,7 +110,8 @@ class PaginaDetalleProducto extends StatelessWidget {
       ),
     );
   }
-  Widget _crearTarjetaInfo(Producto producto, String titulo, List<String> lineas, Color color) { /* ...código sin cambios... */ 
+
+  Widget _crearTarjetaInfo(Producto producto, String titulo, List<String> lineas, Color color) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

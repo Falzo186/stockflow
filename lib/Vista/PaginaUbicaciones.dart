@@ -1,14 +1,12 @@
 // archivo: pagina_ubicaciones.dart
 
 import 'package:flutter/material.dart';
-import '../BaseDeDatosLocal/BaseDatos.dart';
 import '../Modelo/Producto.dart';
-import '../Modelo/StockUbicacion.dart';
+import '../Modelo/ProductoUbicacion.dart';
 
 class PaginaUbicaciones extends StatelessWidget {
   final Producto producto;
-  final List<StockUbicacion> listaDeStock;
-  final BaseDeDatosSimulada db = BaseDeDatosSimulada(); // Para buscar detalles de ubicación
+  final List<ProductoUbicacion> listaDeStock;
 
   PaginaUbicaciones({super.key, required this.producto, required this.listaDeStock});
 
@@ -48,20 +46,14 @@ class PaginaUbicaciones extends StatelessWidget {
                   separatorBuilder: (context, index) => const Divider(color: Colors.white54),
                   itemBuilder: (context, index) {
                     final stockItem = listaDeStock[index];
-                    final ubicacion = db.buscarUbicacionPorId(stockItem.idUbicacion);
-                    
-                    if (ubicacion == null) {
-                       return ListTile(title: Text('Error: Ubicación ${stockItem.idUbicacion} no encontrada'));
-                    }
 
                     return ListTile(
                       title: Text(
-                        'Área: ${ubicacion.area}',
+                        'Área: ${stockItem.ubicacionId} - Nivel: ${stockItem.nivel}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      // Mostramos la descripción y la CANTIDAD ESPECÍFICA de esa ubicación
                       subtitle: Text(
-                        '${ubicacion.descripcionCompleta} | Cantidad: ${stockItem.cantidad}',
+                        'Cantidad: ${stockItem.cantidad}',
                       ),
                     );
                   },

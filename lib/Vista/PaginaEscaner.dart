@@ -1,8 +1,8 @@
-// En tu archivo: lib/Vista/pagina_escaner.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:stockflow/Vista/PaginaInfoProducto.dart';
+import 'package:stockflow/Controlador/ControladorEscaner.dart';
+
+import 'PaginaDetalleProducto.dart'; // Importa tu controlador
 
 class PaginaEscaner extends StatefulWidget {
   const PaginaEscaner({super.key});
@@ -16,6 +16,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
   final TextEditingController _skuController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   String _codigoEscaneado = '';
+  final controladorEscaner = ControladorEscaner();
 
   @override
   void initState() {
@@ -32,51 +33,83 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
     super.dispose();
   }
 
- void _buscarSku(String sku) {
-    if (sku.isEmpty) return;
+  Future<void> _buscarSku(String sku) async {
+    if (sku.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El SKU no puede estar vacío.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    print('Buscando información para el SKU: $sku');
-    
-    // Mostramos una notificación de éxito
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('SKU "$sku" encontrado. Abriendo detalles...'),
-        backgroundColor: const Color(0xFF5A9E8B),
-      ),
-    );
+    try {
+      // Llama al controlador para obtener el producto
+      
+      final producto = await controladorEscaner.obtenerProductoPorSku(sku.trim());
 
-    // Limpiamos los campos para la próxima vez
-    _skuController.clear();
-    _codigoEscaneado = '';
+      if (producto != null) {
+        // Busca las ubicaciones del producto por su ID
+        final listaDeStock = await controladorEscaner.obtenerProductoUbicacionesPorId(producto.id);
 
-    // 2. NAVEGAMOS A LA PÁGINA DE INFORMACIÓN DEL PRODUCTO
-    // Usamos 'push' para que el usuario pueda regresar al escáner
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PaginaInfoProducto(sku: sku), // Le pasamos el SKU
-      ),
-    );
+        // Mostramos una notificación de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Producto encontrado: ${producto.nombre}. Abriendo detalles...'),
+            backgroundColor: const Color(0xFF5A9E8B),
+          ),
+        );
+
+        // Limpiamos los campos para la próxima vez
+        _skuController.clear();
+        _codigoEscaneado = '';
+
+        // Navegamos a la página de información del producto
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PaginaDetalleProducto(producto: producto, listaDeStock: listaDeStock), // Pasamos el producto y la lista de stock
+            ),
+          );
+        }
+      } else {
+        // Mostramos una notificación de error si no se encuentra el producto
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se encontró ningún producto con el SKU "$sku".'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Manejo de errores
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al buscar el producto: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    // ==========================================================
-    // === USANDO LA MISMA PALETA DE COLORES DE LA PÁGINA PRINCIPAL ===
-    // ==========================================================
-    const Color colorFondo = Color(0xFFEAE6E3);
-    const Color colorContenedor = Color(0xFFD6D3E0);
-    const Color colorBotonPrimario = Color.fromARGB(255, 132, 141, 201); // para acciones principales
-    const Color colorBotonSecundario = Color(0xFFB4B9D9); // Azul/púrpura claro
-    const Color colorSecundarioTexto = Color(0xFF6E6E6E);
-
+    // Definimos los nuevos colores
+    const Color colorFondo = Color(0xFFEFEFEF);
+    const Color colorNaranja = Color(0xFFF39C12);
+    const Color colorContenedor = Color(0xFFD5D8DC);
+    const Color colorBotonPrimario = Color(0xFFEB984E);
+    const Color colorBotonSecundario = Color(0xFFFAD7A0);
+    const Color colorSecundarioTexto = Color(0xFF7B7D7D);
 
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
         title: const Text('Escaner', style: TextStyle(color: Colors.white)),
-        backgroundColor: colorBotonPrimario, // Color verde principal
-        iconTheme: const IconThemeData(color: Colors.white), // Flecha de regreso blanca
-        leading: _modoManual 
+        backgroundColor: colorBotonPrimario,
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: _modoManual
             ? IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () {
@@ -85,7 +118,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
                   });
                   FocusScope.of(context).requestFocus(_focusNode);
                 },
-              ) 
+              )
             : null,
       ),
       body: RawKeyboardListener(
@@ -97,14 +130,14 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
                 _buscarSku(_codigoEscaneado);
               }
             } else {
-              if(event.character != null && event.character != '') {
+              if (event.character != null && event.character != '') {
                 _codigoEscaneado += event.character!;
               }
             }
           }
         },
-        child: _modoManual 
-            ? _construirVistaManual(colorContenedor, colorBotonPrimario, colorSecundarioTexto) 
+        child: _modoManual
+            ? _construirVistaManual(colorContenedor, colorBotonPrimario, colorSecundarioTexto)
             : _construirVistaEscaner(colorContenedor, colorBotonSecundario, colorSecundarioTexto),
       ),
     );
@@ -132,7 +165,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
                 labelStyle: TextStyle(color: textColor),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none, // Sin borde
+                  borderSide: BorderSide.none,
                 ),
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.5),
