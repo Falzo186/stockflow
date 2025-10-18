@@ -49,7 +49,7 @@ class PaginaUbicaciones extends StatelessWidget {
 
                     return ListTile(
                       title: Text(
-                        'Área: ${stockItem.ubicacionId} - Nivel: ${stockItem.nivel}',
+                        'Ubicacion: ${stockItem.ubicacionId} - Nivel: ${stockItem.nivel}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(

@@ -48,6 +48,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
       // Llama al controlador para obtener el producto
       
       final producto = await controladorEscaner.obtenerProductoPorSku(sku.trim());
+     
 
       if (producto != null) {
         // Busca las ubicaciones del producto por su ID
