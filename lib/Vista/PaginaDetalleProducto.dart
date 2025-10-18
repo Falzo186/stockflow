@@ -14,37 +14,47 @@ class PaginaDetalleProducto extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color colorFondo = Color(0xFFEFEFEF);
-    const Color colorTarjeta = Color(0xFFD5D8DC);
+    const Color colorNaranja = Color(0xFFF39C12);
+    const Color colorContenedor = Color(0xFFD5D8DC);
+    const Color colorBotonPrimario = Color(0xFFEB984E);
+    const Color colorBotonSecundario = Color(0xFFFAD7A0);
+    const Color colorSecundarioTexto = Color(0xFF7B7D7D);
 
     final stockTotal = listaDeStock.fold<int>(0, (total, stock) => total + stock.cantidad);
 
     return Scaffold(
       backgroundColor: colorFondo,
       appBar: AppBar(
-        backgroundColor: colorFondo,
+        backgroundColor: colorNaranja,
         elevation: 0,
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black54), onPressed: () => Navigator.of(context).pop()),
-        title: const Text('Detalle del producto', style: TextStyle(color: Colors.black54)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: colorSecundarioTexto),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Detalle del producto',
+          style: TextStyle(color: colorSecundarioTexto),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _crearTarjetaProducto(producto, colorTarjeta),
+          _crearTarjetaProducto(producto, colorContenedor),
           const SizedBox(height: 16),
-          _crearTarjetaInfo(producto, "Informacion General", [
+          _crearTarjetaInfo(producto, "Información General", [
             "Costos: \$${producto.precio.toStringAsFixed(2)}",
             "Existencia: $stockTotal u/d",
-          ], colorTarjeta),
+          ], colorContenedor),
           const SizedBox(height: 16),
-          _crearTarjetaInfo(producto, "Descripcion", [producto.descripcion], colorTarjeta),
+          _crearTarjetaInfo(producto, "Descripción", [producto.descripcion], colorContenedor),
           const SizedBox(height: 16),
-          _crearTarjetaUbicaciones(context, colorTarjeta),
+          _crearTarjetaUbicaciones(context, colorContenedor, colorBotonPrimario),
         ],
       ),
     );
   }
 
-  Widget _crearTarjetaUbicaciones(BuildContext context, Color color) {
+  Widget _crearTarjetaUbicaciones(BuildContext context, Color color, Color colorBoton) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -53,7 +63,10 @@ class PaginaDetalleProducto extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Ubicaciones:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Ubicaciones:",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const Divider(),
             ...listaDeStock.take(2).map((listaDeStock) {
               return Text(
@@ -64,6 +77,12 @@ class PaginaDetalleProducto extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorBoton,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => PaginaUbicaciones(producto: producto, listaDeStock: listaDeStock),
@@ -100,8 +119,16 @@ class PaginaDetalleProducto extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Producto: ${producto.nombre}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text('SKU: ${producto.id}'),
+                  Text(
+                    'Producto: ${producto.nombre}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  Text('SKU: ${producto.id}', style: const TextStyle(fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text('Categoría: ${producto.categoria}', style: const TextStyle(fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text('Proveedor: ${producto.proveedor}', style: const TextStyle(fontSize: 14)),
                 ],
               ),
             ),
@@ -120,7 +147,10 @@ class PaginaDetalleProducto extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              titulo,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const Divider(),
             ...lineas.map((linea) => Text(linea)).toList(),
           ],

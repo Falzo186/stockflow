@@ -38,23 +38,18 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('El SKU no puede estar vacío.'),
-          backgroundColor: Colors.red,
+          backgroundColor: Color(0xFFF39C12),
         ),
       );
       return;
     }
 
     try {
-      // Llama al controlador para obtener el producto
-      
       final producto = await controladorEscaner.obtenerProductoPorSku(sku.trim());
-     
 
       if (producto != null) {
-        // Busca las ubicaciones del producto por su ID
         final listaDeStock = await controladorEscaner.obtenerProductoUbicacionesPorId(producto.id);
 
-        // Mostramos una notificación de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Producto encontrado: ${producto.nombre}. Abriendo detalles...'),
@@ -62,33 +57,29 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
           ),
         );
 
-        // Limpiamos los campos para la próxima vez
         _skuController.clear();
         _codigoEscaneado = '';
 
-        // Navegamos a la página de información del producto
         if (mounted) {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => PaginaDetalleProducto(producto: producto, listaDeStock: listaDeStock), // Pasamos el producto y la lista de stock
+              builder: (context) => PaginaDetalleProducto(producto: producto, listaDeStock: listaDeStock),
             ),
           );
         }
       } else {
-        // Mostramos una notificación de error si no se encuentra el producto
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('No se encontró ningún producto con el SKU "$sku".'),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFF39C12),
           ),
         );
       }
     } catch (e) {
-      // Manejo de errores
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al buscar el producto: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(0xFFF39C12),
         ),
       );
     }
@@ -96,7 +87,6 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
 
   @override
   Widget build(BuildContext context) {
-    // Definimos los nuevos colores
     const Color colorFondo = Color(0xFFEFEFEF);
     const Color colorNaranja = Color(0xFFF39C12);
     const Color colorContenedor = Color(0xFFD5D8DC);
@@ -139,7 +129,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
         },
         child: _modoManual
             ? _construirVistaManual(colorContenedor, colorBotonPrimario, colorSecundarioTexto)
-            : _construirVistaEscaner(colorContenedor, colorBotonSecundario, colorSecundarioTexto),
+            : _construirVistaEscaner(colorContenedor, colorNaranja, colorSecundarioTexto),
       ),
     );
   }
