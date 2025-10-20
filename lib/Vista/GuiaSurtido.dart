@@ -7,27 +7,6 @@ const Color colorBackgroundScaffold = Color(0xFFE5E5E5); // Fondo del Scaffold
 const Color colorWhite = Color(0xFFFFFFFF);
 const Color colorBlack = Color(0xFF000000);
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Guía de Surtido',
-      theme: ThemeData(
-        scaffoldBackgroundColor: colorBackgroundScaffold,
-        useMaterial3: true,
-      ),
-      home: const GuiaSurtidoScreen(),
-    );
-  }
-}
-
 // -----------------------------------------------------------------------------
 // ## Pantalla Principal de Guía de Surtido
 // -----------------------------------------------------------------------------

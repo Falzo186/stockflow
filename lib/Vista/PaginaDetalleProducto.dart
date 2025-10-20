@@ -13,48 +13,46 @@ class PaginaDetalleProducto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color colorFondo = Color(0xFFEFEFEF);
-    const Color colorNaranja = Color(0xFFF39C12);
-    const Color colorContenedor = Color(0xFFD5D8DC);
-    const Color colorBotonPrimario = Color(0xFFEB984E);
-    const Color colorBotonSecundario = Color(0xFFFAD7A0);
-    const Color colorSecundarioTexto = Color(0xFF7B7D7D);
+    const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
+    const Color colorOrange = Color(0xFFF88033);
+    const Color colorCardBackground = Color(0x7F736F6F);
+    const Color colorWhite = Color(0xFFFFFFFF);
+    const Color colorBlack = Color(0xFF000000);
 
     final stockTotal = listaDeStock.fold<int>(0, (total, stock) => total + stock.cantidad);
 
     return Scaffold(
-      backgroundColor: colorFondo,
+      backgroundColor: colorBackgroundScaffold,
       appBar: AppBar(
-        backgroundColor: colorNaranja,
+        backgroundColor: colorOrange,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: colorSecundarioTexto),
+          icon: const Icon(Icons.arrow_back, color: colorWhite),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Detalle del producto',
-          style: TextStyle(color: colorSecundarioTexto),
+          style: TextStyle(color: colorWhite),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _crearTarjetaProducto(producto, colorContenedor),
+          _crearTarjetaProducto(producto, colorCardBackground),
           const SizedBox(height: 16),
           _crearTarjetaInfo(producto, "Información General", [
             "Costos: \$${producto.precio.toStringAsFixed(2)}",
             "Existencia: $stockTotal u/d",
-          ], colorContenedor),
+          ], colorCardBackground),
           const SizedBox(height: 16),
-          _crearTarjetaInfo(producto, "Descripción", [producto.descripcion], colorContenedor),
+          _crearTarjetaInfo(producto, "Descripción", [producto.descripcion], colorCardBackground),
           const SizedBox(height: 16),
-          _crearTarjetaUbicaciones(context, colorContenedor, colorBotonPrimario),
+          _crearTarjetaUbicaciones(context, colorCardBackground, colorOrange),
         ],
       ),
     );
   }
-
-  Widget _crearTarjetaUbicaciones(BuildContext context, Color color, Color colorBoton) {
+Widget _crearTarjetaUbicaciones(BuildContext context, Color color, Color colorBoton) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

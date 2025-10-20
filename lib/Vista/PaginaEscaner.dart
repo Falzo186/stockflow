@@ -87,19 +87,18 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
 
   @override
   Widget build(BuildContext context) {
-    const Color colorFondo = Color(0xFFEFEFEF);
-    const Color colorNaranja = Color(0xFFF39C12);
-    const Color colorContenedor = Color(0xFFD5D8DC);
-    const Color colorBotonPrimario = Color(0xFFEB984E);
-    const Color colorBotonSecundario = Color(0xFFFAD7A0);
-    const Color colorSecundarioTexto = Color(0xFF7B7D7D);
+    const Color colorOrange = Color(0xFFF88033);
+    const Color colorCardBackground = Color(0x7F736F6F);
+    const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
+    const Color colorWhite = Color(0xFFFFFFFF);
+    const Color colorBlack = Color(0xFF000000);
 
     return Scaffold(
-      backgroundColor: colorFondo,
+      backgroundColor: colorBackgroundScaffold,
       appBar: AppBar(
-        title: const Text('Escaner', style: TextStyle(color: Colors.white)),
-        backgroundColor: colorBotonPrimario,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Escaner', style: TextStyle(color: colorWhite)),
+        backgroundColor: colorOrange,
+        iconTheme: const IconThemeData(color: colorWhite),
         leading: _modoManual
             ? IconButton(
                 icon: const Icon(Icons.close),
@@ -128,13 +127,13 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
           }
         },
         child: _modoManual
-            ? _construirVistaManual(colorContenedor, colorBotonPrimario, colorSecundarioTexto)
-            : _construirVistaEscaner(colorContenedor, colorNaranja, colorSecundarioTexto),
+            ? _construirVistaManual(colorCardBackground, colorOrange, colorBlack , colorWhite)
+            : _construirVistaEscaner(colorCardBackground, colorOrange, colorBlack, colorWhite),
       ),
     );
   }
 
-  Widget _construirVistaManual(Color bgColor, Color btnColor, Color textColor) {
+  Widget _construirVistaManual(Color bgColor, Color btnColor, Color textColor, Color colorWhite) {
     return Padding(
       padding: const EdgeInsets.all(30.0),
       child: Column(
@@ -159,7 +158,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.5),
+                fillColor: colorWhite.withOpacity(0.5),
               ),
               onSubmitted: _buscarSku,
             ),
@@ -171,7 +170,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
             label: const Text('Buscar'),
             style: ElevatedButton.styleFrom(
               backgroundColor: btnColor,
-              foregroundColor: Colors.white,
+              foregroundColor: colorWhite,
               padding: const EdgeInsets.symmetric(vertical: 15),
               textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -182,7 +181,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
     );
   }
 
-  Widget _construirVistaEscaner(Color bgColor, Color btnColor, Color textColor) {
+  Widget _construirVistaEscaner(Color bgColor, Color btnColor, Color textColor, Color colorWhite) {
     return Padding(
       padding: const EdgeInsets.all(30.0),
       child: Column(
@@ -217,7 +216,7 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: btnColor,
-              foregroundColor: Colors.white,
+              foregroundColor: colorWhite,
               padding: const EdgeInsets.symmetric(vertical: 15),
               textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stockflow/Vista/Info_Bahia_Asociado.dart';
 
 // --- Colores ---
 const Color colorOrange = Color(0xFFF88033);
@@ -7,31 +8,8 @@ const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
 const Color colorWhite = Color(0xFFFFFFFF);
 const Color colorBlack = Color(0xFF000000);
 
-void main() {
-  runApp(const MyApp());
-}
 
-// -----------------------------------------------------------------------------
-// App principal
-// -----------------------------------------------------------------------------
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Itinerario Bahías',
-      theme: ThemeData(
-        scaffoldBackgroundColor: colorBackgroundScaffold,
-        useMaterial3: true,
-      ),
-      home: const ItinerarioBahiasScreen(),
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // Pantalla Principal
 // -----------------------------------------------------------------------------
 class ItinerarioBahiasScreen extends StatelessWidget {
@@ -70,13 +48,49 @@ class ItinerarioBahiasScreen extends StatelessWidget {
 
                     // Lista de Bahías como botones
                     TaskButton(
-                        name: 'Bahía 10-00-04', progress: 1.0, status: 'Completada', onTap: () {}),
+                      name: 'Bahía 10-00-04',
+                      progress: 1.0,
+                      status: 'Completada',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const BayInformationScreen()),
+                        );
+                      },
+                    ),
                     TaskButton(
-                        name: 'Bahía 11-00-08', progress: 0.5, status: 'En Progreso', onTap: () {}),
+                      name: 'Bahía 11-00-08',
+                      progress: 0.5,
+                      status: 'En Progreso',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const BayInformationScreen()),
+                        );
+                      },
+                    ),
                     TaskButton(
-                        name: 'Bahía 10-00-07', progress: 0.0, status: 'Pendiente', onTap: () {}),
+                      name: 'Bahía 10-00-07',
+                      progress: 0.0,
+                      status: 'Pendiente',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const BayInformationScreen()),
+                        );
+                      },
+                    ),
                     TaskButton(
-                        name: 'Bahía 11-00-05', progress: 0.0, status: 'Pendiente', onTap: () {}),
+                      name: 'Bahía 11-00-05',
+                      progress: 0.0,
+                      status: 'Pendiente',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const BayInformationScreen()),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'paginaprincipal.dart'; // Importamos la página del menú principal
+import 'package:stockflow/Vista/Home.dart' show HomeScreen;
 
 class PaginaCarga extends StatefulWidget {
   const PaginaCarga({super.key});
@@ -14,11 +14,11 @@ class _PaginaCargaState extends State<PaginaCarga> {
   @override
   void initState() {
     super.initState();
-    // Inicia un temporizador de 2 segundos
+    // Inicia un temporizador de 2 segundosa
     Timer(const Duration(seconds: 2), () {
       // Usamos pushReplacement para que el usuario no pueda "volver" a la pantalla de carga
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const PaginaPrincipal()),
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
     });
   }
