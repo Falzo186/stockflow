@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/Vista/PaginaCarga.dart';
+import 'package:stockflow/Controlador/ControladorLogin.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,14 +17,70 @@ class _LoginPageState extends State<LoginPage> {
 
   // --- MÉTODOS PARA LA LÓGICA ---
 
-  void _login() {
-    // Aquí irá la lógica de validación e inicio de sesión
-    String username = _userController.text;
-    String password = _passwordController.text;
-    print('Intentando iniciar sesión con Usuario: $username, Contraseña: $password, Recordarme: $_rememberMe');
+  bool _isLoading = false;
 
-    // <-- COMPORTAMIENTO: LÍNEA AGREGADA PARA NAVEGAR A LA PANTALLA DE CARGA
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const PaginaCarga()));
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedUser();
+  }
+
+  Future<void> _loadRememberedUser() async {
+    try {
+      final saved = await ControladorLogin.loadRememberedEmail();
+      if (saved != null) {
+        _userController.text = saved;
+        setState(() {
+          _rememberMe = true;
+        });
+      }
+    } catch (_) {
+      // Ignorar fallos al cargar preferencia
+    }
+  }
+
+  Future<void> _login() async {
+    final String username = _userController.text.trim();
+    final String password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ingresa usuario y contraseña')));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Intentar buscar usuario por correo y contraseña
+      final user = await ControladorLogin.login(username, password);
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Credenciales inválidas')));
+        return;
+      }
+
+      if (user['activo'] == false) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario inactivo, contacte a RRHH')));
+        return;
+      }
+
+      // Guardar/eliminar preferencia
+      await ControladorLogin.saveRememberedEmail(_rememberMe, username);
+
+  // Navegar a la pantalla de carga pasando la info del usuario
+  Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => PaginaCarga(user: user)));
+    } catch (e, st) {
+      // Manejo básico de errores de red/cliente
+      debugPrint('Error en login: $e\n$st');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al conectarse al servidor')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _forgotPassword() {
@@ -170,7 +227,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildLoginButton() {
     return ElevatedButton(
-      onPressed: _login,
+      onPressed: _isLoading ? null : _login,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFD9D9D9),
         foregroundColor: Colors.black,
@@ -180,13 +237,22 @@ class _LoginPageState extends State<LoginPage> {
         ),
         elevation: 5,
       ),
-      child: const Text(
-        'Iniciar',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      child: _isLoading
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.black,
+              ),
+            )
+          : const Text(
+              'Iniciar',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
     );
   }
 }

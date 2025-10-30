@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:stockflow/Vista/Home.dart' show HomeScreen;
 
 class PaginaCarga extends StatefulWidget {
-  const PaginaCarga({super.key});
+  final Map<String, dynamic>? user;
+
+  const PaginaCarga({super.key, this.user});
 
   @override
   State<PaginaCarga> createState() => _PaginaCargaState();
@@ -18,7 +20,7 @@ class _PaginaCargaState extends State<PaginaCarga> {
     Timer(const Duration(seconds: 2), () {
       // Usamos pushReplacement para que el usuario no pueda "volver" a la pantalla de carga
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen(user: widget.user)),
       );
     });
   }

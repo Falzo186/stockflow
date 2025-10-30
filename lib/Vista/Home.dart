@@ -16,7 +16,9 @@ const Color colorWhite = Color(0xFFFFFFFF);
 const Color colorBlack = Color(0xFF000000);
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final Map<String, dynamic>? user;
+
+  const HomeScreen({super.key, this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -27,13 +29,15 @@ class HomeScreen extends StatelessWidget {
         scaffoldBackgroundColor: colorBackgroundScaffold,
         useMaterial3: true,
       ),
-      home: const PaginaPrincipal2(),
+      home: PaginaPrincipal2(user: user),
     );
   }
 }
 
 class PaginaPrincipal2 extends StatelessWidget {
-  const PaginaPrincipal2({super.key});
+  final Map<String, dynamic>? user;
+
+  const PaginaPrincipal2({super.key, this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -172,9 +176,12 @@ class PaginaPrincipal2 extends StatelessWidget {
                   '¡Bienvenida!',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                 ),
-                const Text(
-                  'Antonia Gonzalez',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                Text(
+                  // Mostrar nombre del usuario si está disponible
+                  user != null
+                      ? '${user!['nombre'] ?? ''} ${user!['apellido'] ?? ''}'
+                      : 'Antonia Gonzalez',
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
