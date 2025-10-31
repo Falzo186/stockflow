@@ -1,35 +1,60 @@
-// En tu archivo: lib/Vista/pagina_principal_2.dart
+// Archivo: lib/Vista/HomeScreen.dart (o como se llame tu primer archivo)
 
 import 'package:flutter/material.dart';
+import 'package:stockflow/Vista/Vista_Itinerario_Asociado.dart';
+import 'package:stockflow/Vista/Vista_PaginaEscaner.dart' show PaginaEscaner;
+import 'package:stockflow/Vista/Vista_Surtido.dart';
 import 'dart:math' as math;
 
-import 'package:stockflow/Vista/PaginaEscaner.dart'; // Necesario para usar 'pi' y 'min'
+import 'package:stockflow/Vista/Vista_Recibo.dart'; // Necesario para el gráfico
 
-class PaginaPrincipal2 extends StatelessWidget {
-  const PaginaPrincipal2({super.key});
+// 🎨 Definición de Colores
+const Color colorOrange = Color(0xFFF88033);
+const Color colorCardBackground = Color(0x7F736F6F);
+const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
+const Color colorWhite = Color(0xFFFFFFFF);
+const Color colorBlack = Color(0xFF000000);
+
+class HomeScreen extends StatelessWidget {
+  final Map<String, dynamic>? user;
+
+  const HomeScreen({super.key, this.user});
 
   @override
   Widget build(BuildContext context) {
-    // Paleta de colores del diseño
-    const Color colorFondo = Color(0xFFD3C5C0);
-    const Color colorContenedor = Color(0xFFC4D1F3);
-    const Color colorBotonCerrarSesion = Color(0xFF659890);
-    const Color colorTextoOscuro = Color(0xFF8E7C77);
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'StockFlow',
+      theme: ThemeData(
+        scaffoldBackgroundColor: colorBackgroundScaffold,
+        useMaterial3: true,
+      ),
+      home: PaginaPrincipal2(user: user),
+    );
+  }
+}
 
+class PaginaPrincipal2 extends StatelessWidget {
+  final Map<String, dynamic>? user;
+
+  const PaginaPrincipal2({super.key, this.user});
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: colorFondo,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: ListView(
             children: [
-              _crearContenedorBienvenida(colorContenedor, colorBotonCerrarSesion, colorTextoOscuro),
+              _crearContenedorBienvenida(
+                  colorCardBackground, colorOrange, colorBlack),
               const SizedBox(height: 20),
-              _crearBotonesSuperiores(context, colorContenedor, colorTextoOscuro),
+              _crearBotonesSuperiores(context, colorCardBackground, colorBlack),
               const SizedBox(height: 20),
-              _crearSeccionAvance(colorContenedor, colorTextoOscuro),
+              _crearSeccionAvance(colorCardBackground, colorBlack),
               const SizedBox(height: 20),
-              _crearSeccionSurtido(colorContenedor, colorTextoOscuro),
+              _crearSeccionSurtido(context, colorCardBackground, colorBlack),
             ],
           ),
         ),
@@ -75,8 +100,8 @@ class PaginaPrincipal2 extends StatelessWidget {
                   size: const Size(double.infinity, double.infinity),
                   painter: SemiCirclePainter(
                     progress: porcentaje,
-                    progressColor: const Color(0xFFFBC02D),
-                    trackColor: Colors.white.withOpacity(0.5), // Color de fondo más claro
+                    progressColor: colorOrange,
+                    trackColor: colorWhite.withOpacity(0.5),
                     strokeWidth: 20.0,
                   ),
                 ),
@@ -88,7 +113,7 @@ class PaginaPrincipal2 extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
+                        color: colorOrange,
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -110,10 +135,8 @@ class PaginaPrincipal2 extends StatelessWidget {
     );
   }
 
-
-  // --- Widgets existentes (sin cambios) ---
-
-  Widget _crearContenedorBienvenida(Color bgColor, Color btnColor, Color textColor) {
+  Widget _crearContenedorBienvenida(
+      Color bgColor, Color btnColor, Color textColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -126,8 +149,8 @@ class PaginaPrincipal2 extends StatelessWidget {
             children: [
               const CircleAvatar(
                 radius: 45,
-                backgroundColor: Color(0xFFE0E0E0),
-                child: Icon(Icons.person, size: 70, color: Colors.white),
+                backgroundColor: colorWhite,
+                child: Icon(Icons.person, size: 70, color: colorBlack),
               ),
               Positioned(
                 bottom: 5,
@@ -149,13 +172,23 @@ class PaginaPrincipal2 extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('¡Bienvenida!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),),
-                const Text('Antonia Gonzalez', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),),
+                const Text(
+                  '¡Bienvenida!',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                ),
+                Text(
+                  // Mostrar nombre del usuario si está disponible
+                  user != null
+                      ? '${user!['nombre'] ?? ''} ${user!['apellido'] ?? ''}'
+                      : 'Antonia Gonzalez',
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.logout, size: 18, color: Colors.white),
-                  label: const Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
+                  icon: const Icon(Icons.logout, size: 18, color: colorWhite),
+                  label: const Text('Cerrar sesión',
+                      style: TextStyle(color: colorWhite)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: btnColor,
                     shape: const StadiumBorder(),
@@ -170,8 +203,9 @@ class PaginaPrincipal2 extends StatelessWidget {
     );
   }
 
-  Widget _crearBotonesSuperiores(BuildContext context, Color bgColor, Color textColor) {
-     return Row(
+  Widget _crearBotonesSuperiores(
+      BuildContext context, Color bgColor, Color textColor) {
+    return Row(
       children: [
         Expanded(
           child: _crearBotonIcono(
@@ -179,7 +213,6 @@ class PaginaPrincipal2 extends StatelessWidget {
             texto: 'Escanear',
             bgColor: bgColor,
             textColor: textColor,
-            // --- CAMBIO AQUÍ ---
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const PaginaEscaner()),
@@ -194,15 +227,23 @@ class PaginaPrincipal2 extends StatelessWidget {
             texto: 'Itinerario',
             bgColor: bgColor,
             textColor: textColor,
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ItinerarioBahiasScreen(),
+                ),
+              );
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _crearSeccionSurtido(Color bgColor, Color textColor) {
-     return Container(
+  Widget _crearSeccionSurtido(
+      BuildContext context, Color bgColor, Color textColor) {
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       decoration: BoxDecoration(
         color: bgColor,
@@ -215,19 +256,59 @@ class PaginaPrincipal2 extends StatelessWidget {
             children: [
               Icon(Icons.storefront, color: textColor, size: 28),
               const SizedBox(width: 10),
-              Text('Surtido', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor,),),
+              Text(
+                'Surtido',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 15),
-          _crearBotonNavegacion(icono: Icons.shelves, textoPrincipal: 'Over', textoSecundario: 'Anaquel', onPressed: () {},),
+          _crearBotonNavegacion(
+            icono: Icons.shelves,
+            textoPrincipal: 'Ubicaciones',
+            textoSecundario: 'En Tienda',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SurtidoScreen(),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 10),
-          _crearBotonNavegacion(icono: Icons.receipt_long, textoPrincipal: 'PV', textoSecundario: 'Punto de Venta', onPressed: () {},),
+          _crearBotonNavegacion(
+            icono: Icons.receipt_long,
+            textoPrincipal: 'Recibos',
+            textoSecundario: 'Bodega De Tienda',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ReciboScreen(),
+                ),
+              );
+
+
+              
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _crearBotonIcono({ required IconData icono, required String texto, required Color bgColor, required Color textColor, required VoidCallback onPressed, }) {
+  Widget _crearBotonIcono({
+    required IconData icono,
+    required String texto,
+    required Color bgColor,
+    required Color textColor,
+    required VoidCallback onPressed,
+  }) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
@@ -239,42 +320,58 @@ class PaginaPrincipal2 extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icono, size: 50, color: Colors.white),
+          Icon(icono, size: 50, color: colorWhite),
           const SizedBox(height: 10),
-          Text(texto, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 18,),)
+          Text(
+            texto,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          )
         ],
       ),
     );
   }
-  
-  Widget _crearBotonNavegacion({ required IconData icono, required String textoPrincipal, required String textoSecundario, required VoidCallback onPressed, }) {
-     return ElevatedButton(
+
+  Widget _crearBotonNavegacion({
+    required IconData icono,
+    required String textoPrincipal,
+    required String textoSecundario,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF9EB5F2),
+        backgroundColor: colorOrange,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
         elevation: 0,
       ),
       child: Row(
         children: [
-          Icon(icono, color: Colors.white, size: 40),
+          Icon(icono, color: colorWhite, size: 40),
           const SizedBox(width: 15),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(textoPrincipal, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(textoSecundario, style: const TextStyle(color: Colors.white, fontSize: 16)),
+              Text(textoPrincipal,
+                  style: const TextStyle(
+                      color: colorWhite,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              Text(textoSecundario,
+                  style: const TextStyle(color: colorWhite, fontSize: 16)),
             ],
           ),
           const Spacer(),
-          const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+          const Icon(Icons.arrow_forward_ios, color: colorWhite, size: 20),
         ],
       ),
     );
   }
 }
-
 
 // ==========================================================
 // === CLASE ESPECIAL PARA DIBUJAR EL GRÁFICO (CORREGIDA) ===
@@ -307,17 +404,13 @@ class SemiCirclePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final center = Offset(size.width / 2, size.height);
-    
-    // <-- CAMBIO CLAVE: El radio ahora respeta la altura del contenedor.
-    // Usamos la medida más pequeña (la mitad del ancho o la altura completa) 
-    // para asegurarnos de que el arco quepa perfectamente.
-    // Le restamos la mitad del grosor de la línea para un ajuste perfecto.
+
     final radius = math.min(size.width / 2, size.height) - strokeWidth / 2;
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      math.pi, 
-      math.pi, 
+      math.pi,
+      math.pi,
       false,
       trackPaint,
     );
@@ -325,7 +418,7 @@ class SemiCirclePainter extends CustomPainter {
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       math.pi,
-      math.pi * progress, 
+      math.pi * progress,
       false,
       progressPaint,
     );

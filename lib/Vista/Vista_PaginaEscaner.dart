@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stockflow/Controlador/ControladorEscaner.dart';
 
-import 'PaginaDetalleProducto.dart'; // Importa tu controlador
+import 'Vista_PaginaDetalleProducto.dart'; // Importa tu controlador
 
 class PaginaEscaner extends StatefulWidget {
   const PaginaEscaner({super.key});

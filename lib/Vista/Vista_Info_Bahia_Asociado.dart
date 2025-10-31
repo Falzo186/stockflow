@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:stockflow/Vista/GuiaSurtido.dart';
+import 'package:stockflow/Vista/Vista_GuiaSurtido.dart';
 import 'package:stockflow/Vista/Vista_CheckListBahia.dart';
 
 // --- Definición de Colores ---

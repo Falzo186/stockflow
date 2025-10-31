@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:stockflow/Vista/Info_Bahia_Asociado.dart';
+import 'package:stockflow/Vista/Vista_Info_Bahia_Asociado.dart';
 
 // --- Colores ---
 const Color colorOrange = Color(0xFFF88033);
