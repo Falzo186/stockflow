@@ -24,15 +24,42 @@ class ControladorItinerario {
     }
   }
 
+  /// Obtiene una sola tarea por su id.
+  static Future<Map<String, dynamic>?> obtenerTareaPorId(int tareaId) async {
+    try {
+      final resp = await SupabaseConfig.client.from('tareas').select('id,usuario_id,ubicacion_id,estado,fecha_asignacion,fecha_realizacion').eq('id', tareaId).maybeSingle();
+      if (resp == null) return null;
+      return Map<String, dynamic>.from(resp as Map);
+    } catch (e) {
+      print('Error obtenerTareaPorId: $e');
+      return null;
+    }
+  }
+
   /// Marca una tarea como 'en_progreso'
   static Future<bool> iniciarTarea(int tareaId) async {
     try {
-    await SupabaseConfig.client
-      .from('tareas')
-      .update({'estado': 'en_progreso'})
-      .eq('id', tareaId);
+      // obtener tarea para saber usuario y estado actual
+      final tareaRow = await SupabaseConfig.client.from('tareas').select('usuario_id,estado').eq('id', tareaId).maybeSingle();
+      if (tareaRow == null) return false;
+      final tareaMap = Map<String, dynamic>.from(tareaRow as Map);
+      final estadoActual = (tareaMap['estado'] ?? '').toString();
+      final usuarioId = tareaMap['usuario_id'] is int ? tareaMap['usuario_id'] as int : int.tryParse('${tareaMap['usuario_id']}') ?? 0;
+
+      // Si la tarea ya está en progreso, nada que hacer
+      if (estadoActual == 'en_progreso') return false;
+
+      // Verificar que el usuario no tenga otra tarea en progreso
+      final otherInProgress = await SupabaseConfig.client.from('tareas').select('id').eq('usuario_id', usuarioId).eq('estado', 'en_progreso').neq('id', tareaId).limit(1).maybeSingle();
+      if (otherInProgress != null) {
+        // ya existe otra tarea en progreso para ese usuario
+        return false;
+      }
+
+      await SupabaseConfig.client.from('tareas').update({'estado': 'en_progreso'}).eq('id', tareaId);
       return true;
-    } catch (_) {
+    } catch (e) {
+      print('Error iniciarTarea: $e');
       return false;
     }
   }
@@ -42,6 +69,21 @@ class ControladorItinerario {
   /// [checklist] es un Map con claves booleans como planograma, displays, limpieza, etc.
   static Future<bool> completarTareaConChecklist(int tareaId, Map<String, dynamic> checklist, int usuarioId) async {
     try {
+      // Validación: la tarea debe estar en estado 'en_progreso' y pertenecer al usuario
+      final tareaRow = await SupabaseConfig.client.from('tareas').select('estado,usuario_id').eq('id', tareaId).maybeSingle();
+      if (tareaRow == null) return false;
+      final tareaMap = Map<String, dynamic>.from(tareaRow as Map);
+      final estadoActual = (tareaMap['estado'] ?? '').toString();
+      final assignedUser = tareaMap['usuario_id'] is int ? tareaMap['usuario_id'] as int : int.tryParse('${tareaMap['usuario_id']}') ?? 0;
+      if (estadoActual != 'en_progreso') {
+        // no se puede completar una tarea que no ha sido iniciada
+        return false;
+      }
+      if (assignedUser != usuarioId) {
+        // seguridad: el usuario que intenta completar no es el asignado
+        return false;
+      }
+
       // 1) Actualizar la tarea con checklist y estado
       await SupabaseConfig.client.from('tareas').update({
         'estado': 'completada',
@@ -50,10 +92,10 @@ class ControladorItinerario {
       }).eq('id', tareaId);
 
       // Obtener la ubicacion relacionada con la tarea para actualizar ultimo_servicio
-      final tareaRow = await SupabaseConfig.client.from('tareas').select('ubicacion_id').eq('id', tareaId).maybeSingle();
+      final tareaLoc = await SupabaseConfig.client.from('tareas').select('ubicacion_id').eq('id', tareaId).maybeSingle();
       String? ubicacionId;
-      if (tareaRow != null && (tareaRow as Map).containsKey('ubicacion_id')) {
-        ubicacionId = (tareaRow as Map)['ubicacion_id']?.toString();
+      if (tareaLoc != null && (tareaLoc as Map).containsKey('ubicacion_id')) {
+        ubicacionId = (tareaLoc as Map)['ubicacion_id']?.toString();
       }
 
       // 2) Insertar registro en checklist_servicio (si la tabla existe)

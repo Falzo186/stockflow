@@ -130,15 +130,52 @@ class _ItinerarioBahiasScreenState extends State<ItinerarioBahiasScreen> {
     });
 
     if (action == 'iniciar') {
+      // Validación: el usuario no puede iniciar si ya tiene otra tarea en progreso
+      final userId = widget.user != null ? (widget.user!['id'] is int ? widget.user!['id'] as int : int.tryParse('${widget.user!['id']}') ?? 0) : 0;
+      if (userId == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario inválido'), backgroundColor: Colors.red));
+        return;
+      }
+
+      final tareasUsuario = await ControladorItinerario.obtenerTareas(userId);
+      final hasOtherInProgress = tareasUsuario.any((x) => (x['estado'] ?? '') == 'en_progreso' && (x['id'] as int) != (tarea['id'] as int));
+      if (hasOtherInProgress) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No puedes iniciar: ya tienes otra tarea en progreso'), backgroundColor: Colors.orange));
+        return;
+      }
+
       final ok = await ControladorItinerario.iniciarTarea(tarea['id'] as int);
       if (ok) {
         await _loadData();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo iniciar la tarea')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo iniciar la tarea'), backgroundColor: Colors.red));
       }
     } else if (action == 'completar') {
-        // Navegar a la pantalla de checklist y dejar que ella haga la persistencia mediante el controlador
+        // Pre-validar estado y asignación para dar feedback inmediato
         final userId = widget.user != null ? (widget.user!['id'] is int ? widget.user!['id'] as int : int.tryParse('${widget.user!['id']}') ?? 0) : 0;
+        if (userId == 0) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Usuario inválido'), backgroundColor: Colors.red));
+          return;
+        }
+
+        // Si la tarea no está en progreso o no pertenece al usuario, avisar
+        final tareaRow = await ControladorItinerario.obtenerTareaPorId(tarea['id'] as int);
+        if (tareaRow == null) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tarea no encontrada'), backgroundColor: Colors.red));
+          return;
+        }
+        final estado = (tareaRow['estado'] ?? '').toString();
+        final assigned = tareaRow['usuario_id'] is int ? tareaRow['usuario_id'] as int : int.tryParse('${tareaRow['usuario_id']}') ?? 0;
+        if (estado != 'en_progreso') {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No puedes completar: la tarea no fue iniciada'), backgroundColor: Colors.orange));
+          return;
+        }
+        if (assigned != userId) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No puedes completar: no eres el usuario asignado a esta tarea'), backgroundColor: Colors.orange));
+          return;
+        }
+
+        // Navegar a la pantalla de checklist y dejar que ella haga la persistencia mediante el controlador
         final res = await Navigator.push<bool>(context, MaterialPageRoute(builder: (ctx) {
           return ChecklistBahiaScreen(ubicacionId: tarea['ubicacion_id']?.toString(), tareaId: tarea['id'] as int, usuarioId: userId);
         }));
@@ -146,7 +183,7 @@ class _ItinerarioBahiasScreenState extends State<ItinerarioBahiasScreen> {
         // Si la pantalla indicó éxito (true), refrescar la lista
         if (res == true) {
           await _loadData();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tarea completada')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tarea completada'), backgroundColor: Colors.green));
         }
     } else if (action == 'ver') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => BayInformationScreen(ubicacionId: tarea['ubicacion_id']?.toString() ?? 'Sin Ubicación')));

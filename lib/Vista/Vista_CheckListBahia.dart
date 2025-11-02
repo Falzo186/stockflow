@@ -150,6 +150,31 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
 
     final int tareaId = widget.tareaId ?? 0;
     final int usuarioId = widget.usuarioId ?? 0;
+    // Validaciones locales para dar feedback más específico
+    if (tareaId == 0 || usuarioId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tarea o usuario inválido'), backgroundColor: Colors.red));
+      return;
+    }
+
+    // Obtener la tarea actual para validar estado y asignación
+    final tarea = await ControladorItinerario.obtenerTareaPorId(tareaId);
+    if (tarea == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tarea no encontrada'), backgroundColor: Colors.red));
+      return;
+    }
+
+    final estado = (tarea['estado'] ?? '').toString();
+    final assigned = tarea['usuario_id'] is int ? tarea['usuario_id'] as int : int.tryParse('${tarea['usuario_id']}') ?? 0;
+
+    if (estado != 'en_progreso') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No puedes completar: la tarea no fue iniciada'), backgroundColor: Colors.orange));
+      return;
+    }
+
+    if (assigned != usuarioId) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No puedes completar: no eres el usuario asignado a esta tarea'), backgroundColor: Colors.orange));
+      return;
+    }
 
     // Llamar al controlador para persistir (actualiza tarea, inserta checklist_servicio y actualiza control_bahias)
     final ok = await ControladorItinerario.completarTareaConChecklist(tareaId, Map<String, dynamic>.from(checklistMap), usuarioId);
