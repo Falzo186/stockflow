@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:stockflow/Controlador/ControladorItinerarioJefe.dart';
+import 'package:stockflow/Vista/AsociadoItinerarioScreen.dart';
 
 // --- Definición de Colores ---
 const Color colorOrange = Color(0xFFF88033);
@@ -6,36 +8,36 @@ const Color colorCardBackground = Color(0x7F736F6F); // 50% opacidad
 const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
 const Color colorWhite = Color(0xFFFFFFFF);
 const Color colorBlack = Color(0xFF000000);
-
-void main() {
-  runApp(const MyApp());
-}
-
-// -----------------------------------------------------------------------------
-// App principal
-// -----------------------------------------------------------------------------
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Itinerario Progreso',
-      theme: ThemeData(
-        scaffoldBackgroundColor: colorBackgroundScaffold,
-        useMaterial3: true,
-      ),
-      home: const ItinerarioProgresoScreen(),
-    );
-  }
-}
-
 // -----------------------------------------------------------------------------
 // Pantalla Principal
 // -----------------------------------------------------------------------------
-class ItinerarioProgresoScreen extends StatelessWidget {
-  const ItinerarioProgresoScreen({super.key});
+class ItinerarioProgresoScreen extends StatefulWidget {
+  final Map<String, dynamic>? user;
+
+  const ItinerarioProgresoScreen({super.key, this.user});
+
+  @override
+  State<ItinerarioProgresoScreen> createState() => _ItinerarioProgresoScreenState();
+}
+
+class _ItinerarioProgresoScreenState extends State<ItinerarioProgresoScreen> {
+  bool _loading = true;
+  List<Map<String, dynamic>> _asociados = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAsociados();
+  }
+
+  Future<void> _loadAsociados() async {
+    setState(() => _loading = true);
+    final list = await ControladorItinerarioJefe.obtenerAsociadosConProgreso();
+    if (mounted) setState(() {
+      _asociados = list;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +55,6 @@ class ItinerarioProgresoScreen extends StatelessWidget {
                     _buildHeader(context),
                     const SizedBox(height: 20),
 
-                    // Títulos
                     const Text(
                       'Progreso de Tareas',
                       textAlign: TextAlign.center,
@@ -65,7 +66,7 @@ class ItinerarioProgresoScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     const Text(
-                      '(Asociados Generales)',
+                      '(Asociados)',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
@@ -75,24 +76,48 @@ class ItinerarioProgresoScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
 
-                    // Medidor de progreso
-                    const CircularProgressMeter(
-                      percentage: 0.5,
-                      completed: 25,
-                      total: 50,
-                    ),
-                    const SizedBox(height: 30),
+                    // Loading
+                    if (_loading) const Center(child: CircularProgressIndicator()),
 
-                    // Barra de búsqueda (solo visual)
-                    const SearchBarField(),
-                    const SizedBox(height: 20),
+                    // Resumen global calculado a partir de asociados
+                    if (!_loading) ...[
+                      (() {
+                        final int totalAssigned = _asociados.fold<int>(0, (s, e) => s + ((e['total_tareas'] is int) ? (e['total_tareas'] as int) : int.tryParse('${e['total_tareas']}') ?? 0));
+                        final int totalDone = _asociados.fold<int>(0, (s, e) => s + ((e['completadas'] is int) ? (e['completadas'] as int) : int.tryParse('${e['completadas']}') ?? 0));
+                        final double pct = totalAssigned == 0 ? 0.0 : (totalDone / totalAssigned).clamp(0.0, 1.0);
+                        return Column(
+                          children: [
+                            CircularProgressMeter(percentage: pct, completed: totalDone, total: totalAssigned),
+                            const SizedBox(height: 20),
+                          ],
+                        );
+                      }()),
+                    ],
 
-                    // Lista de asociados (ahora son botones)
-                    ProgressListButton(name: 'Elena Martin', cargo: 'Gerente', progress: 1.0),
-                    ProgressListButton(name: 'Ema Gonzales', cargo: 'Almacén', progress: 0.5),
-                    ProgressListButton(name: 'Emili Hernandez', cargo: 'Ventas', progress: 1.0),
-                    ProgressListButton(name: 'Luis Torres', cargo: 'Logística', progress: 0.7),
-                    ProgressListButton(name: 'Ana Pérez', cargo: 'Compras', progress: 0.9),
+                    // Lista dinámica de asociados
+                    if (!_loading)
+                      ..._asociados.map((a) {
+                        final nombre = a['nombre'] ?? 'N/D';
+                        final cargo = 'Asociado';
+                        final porcentaje = (a['porcentaje'] is num) ? (a['porcentaje'] as num) / 100.0 : (a['porcentaje'] is double ? a['porcentaje'] as double : 0.0);
+                        return ProgressListButton(
+                          name: nombre.toString(),
+                          cargo: cargo,
+                          progress: porcentaje.clamp(0.0, 1.0),
+                          onPressed: () {
+                            // navegar al detalle del asociado
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AsociadoItinerarioScreen(
+                                  asociadoId: (a['id'] is int) ? a['id'] as int : int.tryParse('${a['id']}') ?? 0,
+                                  jefeUser: widget.user,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
                   ],
                 ),
               ),
@@ -103,9 +128,6 @@ class ItinerarioProgresoScreen extends StatelessWidget {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Encabezado con botón de retroceso
-  // ---------------------------------------------------------------------------
   Widget _buildHeader(BuildContext context) {
     return Stack(
       alignment: Alignment.center,
@@ -271,8 +293,9 @@ class ProgressListButton extends StatelessWidget {
   final String name;
   final String cargo;
   final double progress;
+  final VoidCallback? onPressed;
 
-  const ProgressListButton({super.key, required this.name, required this.cargo, required this.progress});
+  const ProgressListButton({super.key, required this.name, required this.cargo, required this.progress, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -282,8 +305,7 @@ class ProgressListButton extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: ElevatedButton(
-        onPressed: () {
-          // Aquí puedes agregar la acción al presionar el botón
+        onPressed: onPressed ?? () {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Presionaste a $name')));
         },
         style: ElevatedButton.styleFrom(

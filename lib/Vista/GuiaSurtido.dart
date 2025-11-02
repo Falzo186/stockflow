@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stockflow/Controlador/ControladorItinerario.dart';
 
 // --- Definición de Colores ---
 const Color colorOrange = Color(0xFFF88033);
@@ -7,16 +8,41 @@ const Color colorBackgroundScaffold = Color(0xFFE5E5E5); // Fondo del Scaffold
 const Color colorWhite = Color(0xFFFFFFFF);
 const Color colorBlack = Color(0xFF000000);
 
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // ## Pantalla Principal de Guía de Surtido
 // -----------------------------------------------------------------------------
-class GuiaSurtidoScreen extends StatelessWidget {
-  const GuiaSurtidoScreen({super.key});
+class GuiaSurtidoScreen extends StatefulWidget {
+  final String? ubicacionId;
+
+  const GuiaSurtidoScreen({super.key, this.ubicacionId});
+
+  @override
+  State<GuiaSurtidoScreen> createState() => _GuiaSurtidoScreenState();
+}
+
+class _GuiaSurtidoScreenState extends State<GuiaSurtidoScreen> {
+  bool _loading = true;
+  List<Map<String, dynamic>> _productos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProductos();
+  }
+
+  Future<void> _loadProductos() async {
+    setState(() => _loading = true);
+    final ubic = widget.ubicacionId ?? '';
+    final prods = await ControladorItinerario.obtenerProductosParaSurtido(ubic);
+    setState(() {
+      _productos = prods;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // El fondo del Scaffold es el gris principal de las vistas de tareas
       backgroundColor: colorCardBackground,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -42,8 +68,24 @@ class GuiaSurtidoScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              // --- Lista de SKUs (Línea de Tiempo) ---
-              const SkuListTimeline(),
+              // --- Lista de SKUs ---
+              if (_loading) const Center(child: CircularProgressIndicator())
+              else if (_productos.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('No se encontraron productos para surtido.'),
+                )
+              else
+                Column(
+                  children: _productos.map((p) {
+                    final nombre = p['nombre'] ?? 'Sin nombre';
+                    final sku = p['id']?.toString() ?? '-';
+                    final rango = p['rango'] ?? '';
+                    final cambio = p['cambio_precio'] == true;
+                    return SkuCard(productName: '$nombre (rango $rango${cambio ? ', cambio precio' : ''})', sku: sku);
+                  }).toList(),
+                ),
+
               const SizedBox(height: 20),
             ],
           ),
@@ -106,7 +148,7 @@ class SkuListTimeline extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Columna de la Línea de Tiempo (Vertical)
+          // Columna de la Línea de Tiempo (Vertical
           Container(
             width: 30,
             margin: const EdgeInsets.only(left: 5),

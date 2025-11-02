@@ -1,12 +1,17 @@
 // Archivo: lib/Vista/HomeScreen.dart (o como se llame tu primer archivo)
 
 import 'package:flutter/material.dart';
-import 'package:stockflow/Vista/Itinerario_Asociado.dart';
+import 'package:stockflow/Vista/Vista_ItinerarioAsociado.dart';
+import 'package:stockflow/Vista/Vista_Itinerario_Jefe.dart';
 import 'package:stockflow/Vista/PaginaEscaner.dart' show PaginaEscaner;
 import 'package:stockflow/Vista/Surtido.dart';
 import 'dart:math' as math;
 
 import 'package:stockflow/Vista/Vista_Recibo.dart'; // Necesario para el gráfico
+import 'package:stockflow/Controlador/ControladorBahias.dart';
+import 'package:stockflow/Controlador/ControladorLogin.dart';
+import 'package:stockflow/Vista/Login.dart';
+import 'package:stockflow/Controlador/ControladorItinerarioJefe.dart';
 
 // 🎨 Definición de Colores
 const Color colorOrange = Color(0xFFF88033);
@@ -34,10 +39,65 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class PaginaPrincipal2 extends StatelessWidget {
+class PaginaPrincipal2 extends StatefulWidget {
   final Map<String, dynamic>? user;
 
   const PaginaPrincipal2({super.key, this.user});
+
+  @override
+  State<PaginaPrincipal2> createState() => _PaginaPrincipal2State();
+}
+
+class _PaginaPrincipal2State extends State<PaginaPrincipal2> {
+  int _avance = 0;
+  int _total = 0;
+  double _porcentajeDb = 0.0; // si viene como 60.0 (porcentaje), lo normalizamos
+  bool _loadingControl = true;
+  // jefe summary
+  bool _isJefe = false;
+  int _jefeTotal = 0;
+  int _jefeCompletadas = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadControlData();
+  }
+
+  Future<void> _loadControlData() async {
+    setState(() {
+      _loadingControl = true;
+    });
+    try {
+      if (widget.user != null && widget.user!['id'] != null) {
+        final idRaw = widget.user!['id'];
+        final int userId = (idRaw is int) ? idRaw : (idRaw is num ? idRaw.toInt() : int.tryParse(idRaw.toString()) ?? 0);
+        if (userId > 0) {
+          final registro = await ControladorBahias.obtenerUltimoControlUsuario(userId);
+          if (registro != null) {
+            _total = (registro['total_bahias'] is num) ? (registro['total_bahias'] as num).toInt() : int.tryParse('${registro['total_bahias']}') ?? 0;
+            _avance = (registro['completadas'] is num) ? (registro['completadas'] as num).toInt() : int.tryParse('${registro['completadas']}') ?? 0;
+            _porcentajeDb = (registro['porcentaje'] is num) ? (registro['porcentaje'] as num).toDouble() : double.tryParse('${registro['porcentaje']}') ?? 0.0;
+          }
+            // Si el usuario es jefe (nivel > 1), cargamos resumen global de tareas
+          if (widget.user != null && widget.user!['nivel'] != null) {
+            final rawNivel = widget.user!['nivel'];
+            final int nivel = (rawNivel is int) ? rawNivel : int.tryParse(rawNivel.toString()) ?? 0;
+            if (nivel > 1) {
+              _isJefe = true;
+              final resumen = await ControladorItinerarioJefe.obtenerResumenTareasGlobal();
+              _jefeTotal = resumen['total'] ?? 0;
+              _jefeCompletadas = resumen['completadas'] ?? 0;
+            }
+          }
+        }
+      }
+    } catch (_) {
+      // en fallo dejamos defaults
+    } finally {
+      if (mounted) setState(() => _loadingControl = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,9 +123,98 @@ class PaginaPrincipal2 extends StatelessWidget {
   }
 
   Widget _crearSeccionAvance(Color bgColor, Color textColor) {
-    final int avance = 6;
-    final int total = 10;
-    final double porcentaje = avance / total;
+    if (_loadingControl) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        height: 150,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Normalizar porcentaje: si BD guardó 60.0 (0-100) convertimos a 0.6
+    double progress;
+    if (_porcentajeDb > 1.0) {
+      progress = (_porcentajeDb / 100.0).clamp(0.0, 1.0);
+    } else if (_total > 0) {
+      progress = (_avance / _total).clamp(0.0, 1.0);
+    } else {
+      progress = 0.0;
+    }
+
+    // Si es jefe, mostramos el resumen global
+    if (_isJefe) {
+      final progress = (_jefeTotal > 0) ? (_jefeCompletadas / _jefeTotal).clamp(0.0, 1.0) : 0.0;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.show_chart, color: textColor, size: 28),
+                const SizedBox(width: 10),
+                Text(
+                  'Resumen global de tareas',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            SizedBox(
+              height: 150,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: const Size(double.infinity, double.infinity),
+                    painter: SemiCirclePainter(
+                      progress: progress,
+                      progressColor: colorOrange,
+                      trackColor: colorWhite.withOpacity(0.5),
+                      strokeWidth: 20.0,
+                    ),
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${(progress * 100).toInt()}%',
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: colorOrange,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '$_jefeCompletadas / $_jefeTotal',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -99,7 +248,7 @@ class PaginaPrincipal2 extends StatelessWidget {
                 CustomPaint(
                   size: const Size(double.infinity, double.infinity),
                   painter: SemiCirclePainter(
-                    progress: porcentaje,
+                    progress: progress,
                     progressColor: colorOrange,
                     trackColor: colorWhite.withOpacity(0.5),
                     strokeWidth: 20.0,
@@ -109,7 +258,7 @@ class PaginaPrincipal2 extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '${(porcentaje * 100).toInt()}%',
+                      '${(progress * 100).toInt()}%',
                       style: TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
@@ -118,7 +267,7 @@ class PaginaPrincipal2 extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      '$avance / $total',
+                      '$_avance / $_total',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -178,14 +327,19 @@ class PaginaPrincipal2 extends StatelessWidget {
                 ),
                 Text(
                   // Mostrar nombre del usuario si está disponible
-                  user != null
-                      ? '${user!['nombre'] ?? ''} ${user!['apellido'] ?? ''}'
+                  widget.user != null
+                      ? '${widget.user!['nombre'] ?? ''} ${widget.user!['apellido'] ?? ''}'
                       : 'Antonia Gonzalez',
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () async {
+                    // Cerrar sesión: limpiar preferencias y volver a Login
+                    await ControladorLogin.logout();
+                    if (!mounted) return;
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage(clearRemembered: true)));
+                  },
                   icon: const Icon(Icons.logout, size: 18, color: colorWhite),
                   label: const Text('Cerrar sesión',
                       style: TextStyle(color: colorWhite)),
@@ -228,12 +382,28 @@ class PaginaPrincipal2 extends StatelessWidget {
             bgColor: bgColor,
             textColor: textColor,
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ItinerarioBahiasScreen(),
-                ),
-              );
+                // Navegación condicional según nivel: nivel > 1 -> vista de jefe
+                int nivel = 0;
+                if (widget.user != null && widget.user!['nivel'] != null) {
+                  final raw = widget.user!['nivel'];
+                  if (raw is int) nivel = raw;
+                  else if (raw is String) nivel = int.tryParse(raw) ?? 0;
+                }
+                if (nivel > 1) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ItinerarioProgresoScreen(user: widget.user),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ItinerarioBahiasScreen(user: widget.user),
+                    ),
+                  );
+                }
             },
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stockflow/Controlador/ControladorItinerario.dart';
 
 // --- Para manejar el estado de cada item ---
 enum OpcionChecklist { noSeleccionado, na, no, si }
@@ -17,9 +18,13 @@ class ChecklistItem {
   });
 }
 
-// --- La Pantalla Principal ---
+// --- La Pantalla Principal ------------
 class ChecklistBahiaScreen extends StatefulWidget {
-  const ChecklistBahiaScreen({super.key});
+  final String? ubicacionId;
+  final int? tareaId;
+  final int? usuarioId;
+
+  const ChecklistBahiaScreen({super.key, this.ubicacionId, this.tareaId, this.usuarioId});
 
   @override
   State<ChecklistBahiaScreen> createState() => _ChecklistBahiaScreenState();
@@ -131,26 +136,34 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
   }
 
   /// Función final (simulada) para registrar el servicio
-  void _registrarServicioCompleto({String? motivo}) {
-    // Cerramos el diálogo si estaba abierto
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
+  Map<String, bool> _buildChecklistMap() {
+    final Map<String, bool> out = {};
+    for (final item in _items) {
+      out[item.id] = (item.seleccion == OpcionChecklist.si);
     }
+    return out;
+  }
 
-    String mensaje = "Servicio registrado correctamente.";
-    if (motivo != null) {
-      mensaje = "Servicio registrado. Motivo Packdown: $motivo";
+  void _registrarServicioCompleto({String? motivo}) async {
+    // Construir mapa de checklist
+    final checklistMap = _buildChecklistMap();
+
+    final int tareaId = widget.tareaId ?? 0;
+    final int usuarioId = widget.usuarioId ?? 0;
+
+    // Llamar al controlador para persistir (actualiza tarea, inserta checklist_servicio y actualiza control_bahias)
+    final ok = await ControladorItinerario.completarTareaConChecklist(tareaId, Map<String, dynamic>.from(checklistMap), usuarioId);
+
+    if (ok) {
+      String mensaje = "Servicio registrado correctamente.";
+      if (motivo != null) mensaje = "Servicio registrado. Motivo Packdown: $motivo";
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje), backgroundColor: Colors.green[700]));
+      // Devolver true para indicar éxito
+      if (Navigator.of(context).canPop()) Navigator.of(context).pop(true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: const Text('Error al registrar servicio'), backgroundColor: Colors.red[700]));
+      if (Navigator.of(context).canPop()) Navigator.of(context).pop(false);
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: Colors.green[700],
-      ),
-    );
-
-    // Aquí puedes agregar la lógica para navegar a otra pantalla
-    // Navigator.of(context).pop();
   }
 
   // --- 4. Construcción de la UI ---

@@ -3,7 +3,9 @@ import 'package:stockflow/Vista/PaginaCarga.dart';
 import 'package:stockflow/Controlador/ControladorLogin.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final bool clearRemembered;
+
+  const LoginPage({super.key, this.clearRemembered = false});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -22,7 +24,22 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _loadRememberedUser();
+    _init();
+  }
+
+  Future<void> _init() async {
+    if (widget.clearRemembered) {
+      // Ensure any saved email is removed when requested (logout flow)
+      try {
+        await ControladorLogin.saveRememberedEmail(false, '');
+      } catch (_) {}
+      setState(() {
+        _rememberMe = false;
+        _userController.text = '';
+      });
+      return;
+    }
+    await _loadRememberedUser();
   }
 
   Future<void> _loadRememberedUser() async {

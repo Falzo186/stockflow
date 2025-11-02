@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:stockflow/Vista/Home.dart' show HomeScreen;
+import 'package:stockflow/Vista/Vista_Home.dart';
 
 class PaginaCarga extends StatefulWidget {
   final Map<String, dynamic>? user;

@@ -42,4 +42,20 @@ class ControladorLogin {
       return null;
     }
   }
+
+  /// Cierra la sesión localmente: elimina el correo guardado y cierra sesión en Supabase si aplica.
+  static Future<void> logout() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('saved_email');
+    } catch (_) {
+      // Ignorar errores de preferencia
+    }
+
+    try {
+      await SupabaseConfig.client.auth.signOut();
+    } catch (_) {
+      // Ignorar si no está inicializado o falla
+    }
+  }
 }

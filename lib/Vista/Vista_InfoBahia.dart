@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/Vista/GuiaSurtido.dart';
 import 'package:stockflow/Vista/Vista_CheckListBahia.dart';
+import 'package:stockflow/Controlador/ControladorItinerario.dart';
+
+// --- Para formateo de fechas
+import 'package:intl/intl.dart' as intl;
 
 // --- Definición de Colores ---
 const Color colorOrange = Color(0xFFF88033);
@@ -12,11 +16,53 @@ const Color colorBlack = Color(0xFF000000);
 // -----------------------------------------------------------------------------
 // Pantalla Principal de Información de Bahía
 // -----------------------------------------------------------------------------
-class BayInformationScreen extends StatelessWidget {
-  const BayInformationScreen({super.key});
+class BayInformationScreen extends StatefulWidget {
+  final String ubicacionId;
+
+  const BayInformationScreen({super.key, required this.ubicacionId});
+
+  @override
+  State<BayInformationScreen> createState() => _BayInformationScreenState();
+}
+
+class _BayInformationScreenState extends State<BayInformationScreen> {
+  bool _loading = true;
+  Map<String, dynamic>? _info;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInfo();
+  }
+
+  Future<void> _loadInfo() async {
+    setState(() => _loading = true);
+    final info = await ControladorItinerario.obtenerInfoUbicacion(widget.ubicacionId);
+    setState(() {
+      _info = info;
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final ubicId = widget.ubicacionId;
+    final descripcion = _info != null ? (_info!['descripcion'] ?? '') : '';
+    final area = _info != null ? (_info!['area'] ?? '') : '';
+    final progress = _info != null ? ((_info!['progress'] ?? 0) as int) : 0;
+    final lastTask = _info != null ? _info!['last_task'] as Map<String, dynamic>? : null;
+    final lastService = _info != null ? (_info!['ultimo_servicio'] ?? null) : null;
+
+    String timeRange = 'Sin rango';
+    if (lastService != null) {
+      try {
+        final dt = DateTime.parse(lastService.toString());
+        timeRange = intl.DateFormat('dd/MM/yyyy').format(dt);
+      } catch (_) {
+        timeRange = lastService.toString();
+      }
+    }
+
     return Scaffold(
       backgroundColor: colorBackgroundScaffold,
       body: SafeArea(
@@ -30,34 +76,44 @@ class BayInformationScreen extends StatelessWidget {
                   children: <Widget>[
                     _buildHeader(context),
                     const SizedBox(height: 30),
-                    const Text(
-                      'Bahía 11-00-08 (Área de Iluminación)',
+
+                    // Título dinámico
+                    Text(
+                      'Bahía $ubicId ${descripcion.isNotEmpty ? '($descripcion)' : ''}',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: colorBlack,
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    if (area.isNotEmpty) Text('Área: $area', style: const TextStyle(color: colorBlack)),
+                    const SizedBox(height: 20),
+
+                    // Medidor de Progreso
+                    CircularProgressMeter(
+                      percentage: (progress / 100.0),
+                      timeRange: lastTask != null ? (lastTask['fecha_realizacion'] ?? timeRange).toString() : timeRange,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Último servicio
+                    LastServiceInfo(
+                      date: lastService != null ? timeRange : 'N/A',
+                      time: lastTask != null ? (lastTask['fecha_realizacion'] ?? '-') : '-',
+                      timeAgo: lastTask != null ? 'verificado' : '-',
+                    ),
+
                     const SizedBox(height: 30),
-                    const CircularProgressMeter(
-                      percentage: 0.5,
-                      timeRange: 'Hoy, 8:00AM - 12:00PM',
-                    ),
-                    const SizedBox(height: 40),
-                    const LastServiceInfo(
-                      date: '16/Oct/2025',
-                      time: '10:30 AM',
-                      timeAgo: 'Hace 22 horas',
-                    ),
-                    const SizedBox(height: 40),
+
                     ProgressListButton(
                       title: 'Guía de Surtido',
                       icon: Icons.book,
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const GuiaSurtidoScreen()),
+                          MaterialPageRoute(builder: (context) => GuiaSurtidoScreen(ubicacionId: ubicId)),
                         );
                       },
                     ),
@@ -68,7 +124,7 @@ class BayInformationScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ChecklistBahiaScreen()),
+                          MaterialPageRoute(builder: (context) => ChecklistBahiaScreen(ubicacionId: ubicId)),
                         );
                       },
                     ),
