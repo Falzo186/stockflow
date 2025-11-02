@@ -225,36 +225,48 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
     double puntaje = 8.0;
     return await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Evaluación de checklist'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: comentarioCtrl, decoration: const InputDecoration(labelText: 'Comentarios')),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Text('Puntaje:'),
-                    Expanded(
-                      child: Slider(value: puntaje, min: 0, max: 10, divisions: 20, onChanged: (v) { puntaje = v; }),
-                    ),
-                    Text(puntaje.toStringAsFixed(1)),
-                  ],
+          builder: (context) => StatefulBuilder(
+            builder: (context, setState) => AlertDialog(
+              title: const Text('Evaluación de checklist'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(controller: comentarioCtrl, decoration: const InputDecoration(labelText: 'Comentarios')),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Text('Puntaje:'),
+                      Expanded(
+                        child: Slider(
+                          value: puntaje,
+                          min: 0,
+                          max: 10,
+                          divisions: 20,
+                          onChanged: (v) {
+                            setState(() {
+                              puntaje = v;
+                            });
+                          },
+                        ),
+                      ),
+                      Text(puntaje.toStringAsFixed(1)),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                ElevatedButton(
+                  onPressed: () async {
+                    final evaluador = widget.jefeUser != null && widget.jefeUser!['id'] != null ? (widget.jefeUser!['id'] is int ? widget.jefeUser!['id'] as int : int.tryParse('${widget.jefeUser!['id']}') ?? 0) : 0;
+                    final ok = await ControladorItinerarioJefe.evaluarTarea(tareaId, evaluador, comentarioCtrl.text, puntaje);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'Evaluación registrada' : 'Error al registrar evaluación')));
+                    Navigator.pop(context, ok);
+                  },
+                  child: const Text('Guardar'),
                 ),
               ],
             ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-              ElevatedButton(
-                onPressed: () async {
-                  final evaluador = widget.jefeUser != null && widget.jefeUser!['id'] != null ? (widget.jefeUser!['id'] is int ? widget.jefeUser!['id'] as int : int.tryParse('${widget.jefeUser!['id']}') ?? 0) : 0;
-                  final ok = await ControladorItinerarioJefe.evaluarTarea(tareaId, evaluador, comentarioCtrl.text, puntaje);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'Evaluación registrada' : 'Error al registrar evaluación')));
-                  Navigator.pop(context, ok);
-                },
-                child: const Text('Guardar'),
-              ),
-            ],
           ),
         ) ??
         false;
