@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:stockflow/Controlador/ControladorEscaner.dart';
-
 import 'PaginaDetalleProducto.dart'; // Importa tu controlador
+
+// Colores del proyecto (globales para usar desde los helpers)
+const Color colorOrange = Color(0xFFF88033);
+const Color colorCardBackground = Color(0x7F736F6F);
+const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
+const Color colorWhite = Color(0xFFFFFFFF);
+const Color colorBlack = Color(0xFF000000);
 
 class PaginaEscaner extends StatefulWidget {
   const PaginaEscaner({super.key});
@@ -87,30 +93,12 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
 
   @override
   Widget build(BuildContext context) {
-    const Color colorOrange = Color(0xFFF88033);
-    const Color colorCardBackground = Color(0x7F736F6F);
-    const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
-    const Color colorWhite = Color(0xFFFFFFFF);
-    const Color colorBlack = Color(0xFF000000);
-
     return Scaffold(
-      backgroundColor: colorBackgroundScaffold,
-      appBar: AppBar(
-        title: const Text('Escaner', style: TextStyle(color: colorWhite)),
-        backgroundColor: colorOrange,
-        iconTheme: const IconThemeData(color: colorWhite),
-        leading: _modoManual
-            ? IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  setState(() {
-                    _modoManual = false;
-                  });
-                  FocusScope.of(context).requestFocus(_focusNode);
-                },
-              )
-            : null,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(68.0),
+        child: SafeArea(child: _buildHeader(context)),
       ),
+      backgroundColor: colorBackgroundScaffold,
       body: RawKeyboardListener(
         focusNode: _focusNode,
         onKey: (RawKeyEvent event) {
@@ -222,6 +210,39 @@ class _PaginaEscanerState extends State<PaginaEscaner> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             child: const Text('Ingresar SKU manualmente'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+      child: Row(
+        children: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorOrange.withOpacity(0.1),
+              shape: const CircleBorder(),
+              minimumSize: const Size(40, 40),
+              padding: EdgeInsets.zero,
+              elevation: 0,
+            ),
+            child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              'Escaner',
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: colorBlack,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

@@ -119,4 +119,45 @@ class ControladorSurtido {
     }
   }
 
+  /// Registra la baja de un producto en inventario mediante un RPC que
+  /// debe insertar en la tabla bajas_inventario y realizar la lógica necesaria
+  /// (audit log, decrementar/ajustar cantidades, etc.)
+  Future<bool> registrarBajaProducto({
+    required int usuarioId,
+    required int productoId,
+    required String ubicacionId,
+    required String nivel,
+    required int cantidad,
+    required String motivo,
+  }) async {
+    try {
+      await SupabaseConfig.client.rpc('registrar_baja_producto', params: {
+        'p_usuario_id': usuarioId,
+        'p_producto_id': productoId,
+        'p_ubicacion_id': ubicacionId,
+        'p_nivel': nivel,
+        'p_cantidad': cantidad,
+        'p_motivo': motivo,
+      });
+      return true;
+    } catch (e) {
+      print('Error en registrarBajaProducto: $e');
+      return false;
+    }
+  }
+
+  /// Obtiene el reporte de bajas (RPC que devuelve filas con detalles de cada baja)
+  static Future<List<Map<String, dynamic>>> obtenerReporteBajas() async {
+    try {
+      final data = await SupabaseConfig.client.rpc('obtener_reporte_bajas');
+      if (data is List) {
+        return data.map((e) => Map<String, dynamic>.from(e)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error en obtenerReporteBajas: $e');
+      return [];
+    }
+  }
+
 }

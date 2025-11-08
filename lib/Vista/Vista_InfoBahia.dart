@@ -142,34 +142,32 @@ class _BayInformationScreenState extends State<BayInformationScreen> {
 
   // Encabezado con flecha y texto centrado
   Widget _buildHeader(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            width: 45,
-            height: 45,
-            decoration: BoxDecoration(
-              color: colorWhite,
-              shape: BoxShape.circle,
-              border: Border.all(color: colorOrange, width: 2),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Row(
+        children: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorOrange.withOpacity(0.1),
+              shape: const CircleBorder(),
+              minimumSize: const Size(40, 40),
+              padding: EdgeInsets.zero,
+              elevation: 0,
             ),
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: const Icon(Icons.arrow_back, color: colorOrange),
-            ),
+            child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
           ),
-        ),
+        const SizedBox(width: 15),
         const Text(
           'Informacion',
           style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w400,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
             color: colorBlack,
           ),
         ),
       ],
+      )
     );
   }
 }

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/Controlador/ControladorItinerario.dart';
 
+// Colores usados en este archivo
+const Color colorOrange = Color(0xFFF88033);
+const Color colorBlack = Color(0xFF000000);
+const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
+
 // --- Para manejar el estado de cada item ---
 enum OpcionChecklist { noSeleccionado, na, no, si }
 
@@ -32,8 +37,7 @@ class ChecklistBahiaScreen extends StatefulWidget {
 
 class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
   // Colores principales de tu app (basado en las imágenes)
-  static const Color colorPrimario = Color(0xFFF4511E); // Naranja oscuro
-  static const Color colorPrimarioClaro = Color(0xFFFF7043);
+  static const Color colorPrimario = Colors.orange; // Naranja oscuro
   static const Color colorGris = Colors.grey;
 
   // --- 1. Definición del estado: La lista de tareas ---
@@ -198,12 +202,12 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
     final bool estaCompleto = _isChecklistCompleto();
 
     return Scaffold(
-      appBar: AppBar(
-        title:
-            const Text('Finalizar Mercadeo | D10943...'),
-        backgroundColor: colorPrimario,
-        foregroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(68.0),
+        child: SafeArea(child: _buildHeader(context)),
       ),
+      backgroundColor: colorBackgroundScaffold,
+
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: <Widget>[
@@ -262,41 +266,89 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
     );
   }
 
-  /// Widget que construye cada tarjeta de la checklist
-  Widget _buildChecklistItem(ChecklistItem item, int itemIndex) {
-    // Prepara la lista de botones (hijos)
-    final List<Widget> children = [];
+  /// Construye la fila de opciones para un item (N/A, X, ✓) usando botones
+  /// individuales para permitir colores base diferentes por opción.
+  Widget _buildOptionRow(ChecklistItem item, int itemIndex) {
+    const Color colorGreen = Color(0xFF2E7D32);
+    const Color colorRed = Color(0xFFD32F2F);
+    const Color colorBlue = Color(0xFF1976D2);
+
+    // Indices para isSelected
+    final List<bool> isSelected = item.tieneNA
+        ? [item.seleccion == OpcionChecklist.na, item.seleccion == OpcionChecklist.no, item.seleccion == OpcionChecklist.si]
+        : [item.seleccion == OpcionChecklist.no, item.seleccion == OpcionChecklist.si];
+
+    Widget buildOption({required Widget child, required bool selected, required Color selColor, required VoidCallback onPressed}) {
+      return Expanded(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: OutlinedButton(
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all(selected ? selColor.withOpacity(0.14) : selColor.withOpacity(0.06)),
+              side: MaterialStateProperty.all(BorderSide(color: selColor)),
+              foregroundColor: MaterialStateProperty.all(selColor),
+              minimumSize: MaterialStateProperty.all(const Size.fromHeight(40)),
+              shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))),
+            ),
+            onPressed: onPressed,
+            child: child,
+          ),
+        ),
+      );
+    }
+
+    final List<Widget> options = [];
     if (item.tieneNA) {
-      children.add(const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.0),
-        child: Text('N/A'),
+      options.add(buildOption(
+        child: Text('N/A', style: TextStyle(color: colorBlue, fontWeight: isSelected[0] ? FontWeight.w700 : FontWeight.w500)),
+        selected: isSelected[0],
+        selColor: colorBlue,
+        onPressed: () {
+          setState(() {
+            final nueva = OpcionChecklist.na;
+            if (_items[itemIndex].seleccion == nueva) _items[itemIndex].seleccion = OpcionChecklist.noSeleccionado;
+            else _items[itemIndex].seleccion = nueva;
+          });
+        },
       ));
     }
-    children.addAll([
-      const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.0),
-        child: Icon(Icons.close), // X
-      ),
-      const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.0),
-        child: Icon(Icons.check), // ✓
-      ),
-    ]);
 
-    // Prepara la lista de "seleccionados"
-    List<bool> isSelected;
-    if (item.tieneNA) {
-      isSelected = [
-        item.seleccion == OpcionChecklist.na,
-        item.seleccion == OpcionChecklist.no,
-        item.seleccion == OpcionChecklist.si,
-      ];
-    } else {
-      isSelected = [
-        item.seleccion == OpcionChecklist.no,
-        item.seleccion == OpcionChecklist.si,
-      ];
-    }
+    // X button (No)
+    final int idxNo = item.tieneNA ? 1 : 0;
+    options.add(buildOption(
+      child: Icon(Icons.close, color: colorRed),
+      selected: isSelected[idxNo],
+      selColor: colorRed,
+      onPressed: () {
+        setState(() {
+          final nueva = OpcionChecklist.no;
+          if (_items[itemIndex].seleccion == nueva) _items[itemIndex].seleccion = OpcionChecklist.noSeleccionado;
+          else _items[itemIndex].seleccion = nueva;
+        });
+      },
+    ));
+
+    // Check button (Si)
+    final int idxSi = item.tieneNA ? 2 : 1;
+    options.add(buildOption(
+      child: Icon(Icons.check, color: colorGreen),
+      selected: isSelected[idxSi],
+      selColor: colorGreen,
+      onPressed: () {
+        setState(() {
+          final nueva = OpcionChecklist.si;
+          if (_items[itemIndex].seleccion == nueva) _items[itemIndex].seleccion = OpcionChecklist.noSeleccionado;
+          else _items[itemIndex].seleccion = nueva;
+        });
+      },
+    ));
+
+    return Row(mainAxisSize: MainAxisSize.max, children: options);
+  }
+
+  /// Widget que construye cada tarjeta de la checklist
+  Widget _buildChecklistItem(ChecklistItem item, int itemIndex) {
+    // (removed previous ToggleButtons helpers -- now we render per-option buttons)
 
     return Card(
       elevation: 2,
@@ -316,50 +368,52 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            // Fila de botones
+            // Fila de botones con colores base por opción
+            const SizedBox(height: 4),
             SizedBox(
-              width: double.infinity, // Ocupa todo el ancho
-              child: ToggleButtons(
-                isSelected: isSelected,
-                // Estilos para que se parezca a tu imagen
-                fillColor: colorPrimario.withOpacity(0.1),
-                selectedColor: colorPrimario,
-                color: colorGris,
-                selectedBorderColor: colorPrimario,
-                borderColor: colorGris,
-                borderRadius: BorderRadius.circular(8.0),
-                constraints: const BoxConstraints(
-                    minHeight: 40.0), // Altura mínima
-                // Lógica para actualizar el estado
-                onPressed: (int index) {
-                  setState(() {
-                    OpcionChecklist nuevaSeleccion;
+              width: double.infinity,
+              child: _buildOptionRow(item, itemIndex),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                    // Mapea el índice del botón a nuestro Enum
-                    if (item.tieneNA) {
-                      if (index == 0) nuevaSeleccion = OpcionChecklist.na;
-                      else if (index == 1) nuevaSeleccion = OpcionChecklist.no;
-                      else nuevaSeleccion = OpcionChecklist.si; // index == 2
-                    } else {
-                      if (index == 0) nuevaSeleccion = OpcionChecklist.no;
-                      else nuevaSeleccion = OpcionChecklist.si; // index == 1
-                    }
-
-                    // Lógica de "toggle": si presiona el mismo botón, se deselecciona
-                    if (_items[itemIndex].seleccion == nuevaSeleccion) {
-                      _items[itemIndex].seleccion =
-                          OpcionChecklist.noSeleccionado;
-                    } else {
-                      _items[itemIndex].seleccion = nuevaSeleccion;
-                    }
-                  });
-                },
-                children: children,
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      color: const Color.fromARGB(193, 250, 199, 167),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+        child: Row(
+          children: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorOrange.withOpacity(0.1),
+                shape: const CircleBorder(),
+                minimumSize: const Size(40, 40),
+                padding: EdgeInsets.zero,
+                elevation: 0,
+              ),
+              child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                'Finalizar Mercadeo | D10943...',
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: colorBlack,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
       ),
     );
+
   }
 }

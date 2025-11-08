@@ -13,9 +13,14 @@ class ControladorItinerarioJefe {
       for (final u in usuarios) {
         final uid = u['id'] is int ? u['id'] as int : int.tryParse('${u['id']}') ?? 0;
         // contar tareas
-  final totalResp = await SupabaseConfig.client.from('tareas').select('id').eq('usuario_id', uid);
+        final totalResp = await SupabaseConfig.client.from('tareas').select('id').eq('usuario_id', uid);
         final total = (totalResp as List).length;
-  final doneResp = await SupabaseConfig.client.from('tareas').select('id').eq('usuario_id', uid).eq('estado', 'completada');
+        // contar completadas o revisadas
+        final doneResp = await SupabaseConfig.client
+            .from('tareas')
+            .select('id')
+            .eq('usuario_id', uid)
+            .filter('estado', 'in', ['completada', 'revisada']);
         final done = (doneResp as List).length;
         final porcentaje = total == 0 ? 0.0 : (done / total) * 100.0;
 
@@ -140,13 +145,50 @@ class ControladorItinerarioJefe {
   static Future<Map<String, int>> obtenerResumenTareasGlobal() async {
     try {
       final allResp = await SupabaseConfig.client.from('tareas').select('id');
-      final completedResp = await SupabaseConfig.client.from('tareas').select('id').eq('estado', 'completada');
+      final completedResp = await SupabaseConfig.client
+          .from('tareas')
+          .select('id')
+          .filter('estado', 'in', ['completada', 'revisada']);
       final int total = (allResp as List).length;
       final int done = (completedResp as List).length;
       return {'total': total, 'completadas': done};
     } catch (e) {
       print('Error obtenerResumenTareasGlobal: $e');
       return {'total': 0, 'completadas': 0};
+    }
+  }
+
+  /// Obtiene la lista de asociados (nivel 1) junto con el promedio de calificaciones
+  /// de sus tareas que están en estado 'revisada'. Esta función invoca la
+  /// función SQL registrada en la base de datos: obtener_promedio_asociados().
+  static Future<List<Map<String, dynamic>>> obtenerPromedioAsociados() async {
+    try {
+      final data = await SupabaseConfig.client.rpc('obtener_promedio_asociados');
+      if (data is List) {
+        return data.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error en obtenerPromedioAsociados: $e');
+      return [];
+    }
+  }
+
+  /// Obtiene el detalle de tareas (todas las tareas) para un asociado concreto
+  /// Invoca la función RPC 'obtener_detalle_asociado' en la base de datos.
+  static Future<List<Map<String, dynamic>>> obtenerTareasDetalleAsociado(int asociadoId) async {
+    try {
+      final data = await SupabaseConfig.client.rpc(
+        'obtener_detalle_asociado',
+        params: {'p_usuario_id': asociadoId},
+      );
+      if (data is List) {
+        return data.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error en obtenerTareasDetalleAsociado: $e');
+      return [];
     }
   }
 }

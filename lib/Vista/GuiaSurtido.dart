@@ -23,6 +23,7 @@ class GuiaSurtidoScreen extends StatefulWidget {
 class _GuiaSurtidoScreenState extends State<GuiaSurtidoScreen> {
   bool _loading = true;
   List<Map<String, dynamic>> _productos = [];
+  bool _selectAll = false;
 
   @override
   void initState() {
@@ -96,32 +97,32 @@ class _GuiaSurtidoScreenState extends State<GuiaSurtidoScreen> {
 
   // Widget para el encabezado (Flecha, Título)
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      children: <Widget>[
-        // Botón de Retroceso Circular
-        Container(
-          width: 45,
-          height: 45,
-          decoration: BoxDecoration(
-            color: colorWhite,
-            shape: BoxShape.circle,
-            border: Border.all(color: colorOrange, width: 2),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Row(
+        children: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorOrange.withOpacity(0.1),
+              shape: const CircleBorder(),
+              minimumSize: const Size(40, 40),
+              padding: EdgeInsets.zero,
+              elevation: 0,
+            ),
+            child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
           ),
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: const Icon(Icons.arrow_back, color: colorOrange),
+          const SizedBox(width: 15),
+          const Text(
+            'Guía de Surtido',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: colorBlack,
+            ),
           ),
-        ),
-        const SizedBox(width: 20),
-        const Text(
-          'Guía de Surtido',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w400,
-            color: colorBlack,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

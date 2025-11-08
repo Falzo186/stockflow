@@ -5,6 +5,13 @@ import 'package:stockflow/Modelo/ProductoUbicacion.dart';
 import 'package:stockflow/Vista/PaginaUbicaciones.dart';
 import '../Modelo/Producto.dart';
 
+// Colores del proyecto (reutilizables)
+const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
+const Color colorOrange = Color(0xFFF88033);
+const Color colorCardBackground = Color(0x7F736F6F);
+const Color colorWhite = Color(0xFFFFFFFF);
+const Color colorBlack = Color(0xFF000000);
+
 class PaginaDetalleProducto extends StatelessWidget {
   final Producto producto;
   final List<ProductoUbicacion> listaDeStock;
@@ -13,41 +20,29 @@ class PaginaDetalleProducto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color colorBackgroundScaffold = Color(0xFFE5E5E5);
-    const Color colorOrange = Color(0xFFF88033);
-    const Color colorCardBackground = Color(0x7F736F6F);
-    const Color colorWhite = Color(0xFFFFFFFF);
-    const Color colorBlack = Color(0xFF000000);
+  // use file-level color constants
 
     final stockTotal = listaDeStock.fold<int>(0, (total, stock) => total + stock.cantidad);
 
     return Scaffold(
       backgroundColor: colorBackgroundScaffold,
-      appBar: AppBar(
-        backgroundColor: colorOrange,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: colorWhite),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Detalle del producto',
-          style: TextStyle(color: colorWhite),
-        ),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(68.0),
+        child: SafeArea(child: _buildHeader(context)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _crearTarjetaProducto(producto, colorCardBackground),
+          _crearTarjetaProducto(producto, Color.fromARGB(80, 115, 111, 111)),
           const SizedBox(height: 16),
           _crearTarjetaInfo(producto, "Información General", [
             "Costos: \$${producto.precio.toStringAsFixed(2)}",
             "Existencia: $stockTotal u/d",
-          ], colorCardBackground),
+          ], Color.fromARGB(80, 115, 111, 111)),
           const SizedBox(height: 16),
-          _crearTarjetaInfo(producto, "Descripción", [producto.descripcion], colorCardBackground),
+          _crearTarjetaInfo(producto, "Descripción", [producto.descripcion], Color.fromARGB(80, 115, 111, 111)),
           const SizedBox(height: 16),
-          _crearTarjetaUbicaciones(context, colorCardBackground, colorOrange),
+          _crearTarjetaUbicaciones(context, Color.fromARGB(80, 115, 111, 111), const Color.fromARGB(188, 245, 140, 75)),
         ],
       ),
     );
@@ -151,6 +146,42 @@ Widget _crearTarjetaUbicaciones(BuildContext context, Color color, Color colorBo
             ),
             const Divider(),
             ...lineas.map((linea) => Text(linea)).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      color: const Color.fromARGB(193, 250, 199, 167),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+        child: Row(
+          children: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorOrange.withOpacity(0.1),
+                shape: const CircleBorder(),
+                minimumSize: const Size(40, 40),
+                padding: EdgeInsets.zero,
+                elevation: 0,
+              ),
+              child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                'Detalle del producto',
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: colorBlack,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

@@ -12,7 +12,8 @@ const Color colorBlack = Color(0xFF000000);
 class ProductoItem {
   final String nombre;
   final String suk; // usaremos esto como producto_id cuando aplique
-  int stockNum; // cantidad numérica
+  // Mantener cantidades por nivel para evitar duplicados (pv/over)
+  final Map<String, int> niveles;
   final String ubicacion;
   bool estaSeleccionado; // Para marcar para eliminación
   bool isNew; // si fue agregado localmente
@@ -20,16 +21,19 @@ class ProductoItem {
   ProductoItem({
     required this.nombre,
     required this.suk,
-    required this.stockNum,
+    Map<String, int>? niveles,
     required this.ubicacion,
     this.estaSeleccionado = false,
     this.isNew = false,
-  });
+  }) : niveles = niveles ?? {'pv': 0, 'over': 0};
+
+  int get stockNum => niveles.values.fold(0, (a, b) => a + b);
 }
 
 // --- Pantalla de Surtido ---
 class ReciboScreen extends StatefulWidget {
-  const ReciboScreen({super.key});
+  final Map<String, dynamic>? user;
+  const ReciboScreen({super.key, this.user});
 
   @override
   State<ReciboScreen> createState() => _ReciboScreenState();
@@ -50,7 +54,8 @@ class _ReciboScreenState extends State<ReciboScreen> {
 
   // Acciones marcadas para productos seleccionados (map producto.suk -> acción)
   final Map<String, String> _markedActions = {};
-  final Set<String> _toDeleteIds = {};
+  // Lista de productos completos a eliminar (suk, cantidad, nivel)
+  final List<Map<String, dynamic>> _toDeleteProducts = [];
 
   /// Lógica principal al tocar un checkbox
   void _onProductoCheck(ProductoItem producto, bool? newValue) {
@@ -134,15 +139,18 @@ class _ReciboScreenState extends State<ReciboScreen> {
     final controlador = ControladorSurtido();
     final ubicaciones = await controlador.buscarProductosBahia(bayId);
 
-    // Agregar y agregarizar por productoId sumando cantidades
+    // Agregar y agregarizar por productoId sumando cantidades por nivel
     final Map<String, ProductoItem> agg = {};
     for (final u in ubicaciones) {
       final pid = u.productoId.toString();
-      final qty = u.cantidad;
+      final qty = u.cantidad ?? 0;
+      final nivel = (u.nivel ?? 'over').toString();
       if (!agg.containsKey(pid)) {
-        agg[pid] = ProductoItem(nombre: 'ID $pid', suk: pid, stockNum: qty, ubicacion: u.ubicacionId, isNew: false);
+        final niveles = {'pv': 0, 'over': 0};
+        niveles[nivel] = (niveles[nivel] ?? 0) + qty;
+        agg[pid] = ProductoItem(nombre: 'ID $pid', suk: pid, niveles: niveles, ubicacion: u.ubicacionId, isNew: false);
       } else {
-        agg[pid]!.stockNum += qty;
+        agg[pid]!.niveles[nivel] = (agg[pid]!.niveles[nivel] ?? 0) + qty;
       }
     }
 
@@ -207,14 +215,33 @@ class _ReciboScreenState extends State<ReciboScreen> {
                   }
                   // registrar acción y eliminar localmente
                   _markedActions[p.suk] = action;
-                  setState(() {
-                    if (p.isNew) {
+
+                  if (p.isNew) {
+                    setState(() {
                       _productos.removeWhere((np) => np.suk == p.suk);
                       _newProducts.removeWhere((np) => np.suk == p.suk);
-                    } else {
-                      _toDeleteIds.add(p.suk);
-                      _productos.removeWhere((ap) => ap.suk == p.suk);
-                    }
+                    });
+                    continue;
+                  }
+
+                  // Para productos existentes, pedimos nivel antes de eliminar
+                  final nivel = await showDialog<String?>(
+                    context: context,
+                    builder: (context) => SimpleDialog(
+                      title: const Text('Selecciona nivel a eliminar'),
+                      children: [
+                        SimpleDialogOption(onPressed: () => Navigator.of(context).pop('pv'), child: const Text('pv')),
+                        SimpleDialogOption(onPressed: () => Navigator.of(context).pop('over'), child: const Text('over')),
+                        TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancelar', style: TextStyle(color: colorBlack))),
+                      ],
+                    ),
+                  );
+                  if (nivel == null) continue;
+
+                  final cantidad = p.niveles[nivel] ?? 0;
+                  setState(() {
+                    _toDeleteProducts.add({'suk': p.suk, 'cantidad': cantidad, 'nivel': nivel});
+                    _productos.removeWhere((ap) => ap.suk == p.suk);
                   });
                 }
               },
@@ -300,11 +327,12 @@ class _ReciboScreenState extends State<ReciboScreen> {
                 }
                 final qty = await _askQuantityDialog(initial: 1);
                 if (qty == null || qty <= 0) return;
-                // Si ya existe en productos existentes, sumar cantidad
+                // Si ya existe en productos existentes, sumar cantidad por defecto en 'over'
                 final existingIndex = _productos.indexWhere((p) => p.suk == pid);
                 if (existingIndex != -1 && !_productos[existingIndex].isNew) {
                   setState(() {
-                    _productos[existingIndex].stockNum += qty;
+                    final p = _productos[existingIndex];
+                    p.niveles['over'] = (p.niveles['over'] ?? 0) + qty;
                     _newProductController.clear();
                   });
                 } else {
@@ -312,14 +340,15 @@ class _ReciboScreenState extends State<ReciboScreen> {
                   final inNewIndex = _newProducts.indexWhere((p) => p.suk == pid);
                   if (inNewIndex != -1) {
                     setState(() {
-                      _newProducts[inNewIndex].stockNum += qty;
+                      final np = _newProducts[inNewIndex];
+                      np.niveles['over'] = (np.niveles['over'] ?? 0) + qty;
                       // reflect in display list
                       final dispIndex = _productos.indexWhere((p) => p.suk == pid);
-                      if (dispIndex != -1) _productos[dispIndex].stockNum = _newProducts[inNewIndex].stockNum;
+                      if (dispIndex != -1) _productos[dispIndex].niveles['over'] = np.niveles['over']!;
                       _newProductController.clear();
                     });
                   } else {
-                    final newEntry = ProductoItem(nombre: pid, suk: pid, stockNum: qty, ubicacion: _currentBahiaId ?? 'BT000', isNew: true);
+                    final newEntry = ProductoItem(nombre: pid, suk: pid, niveles: {'pv': 0, 'over': qty}, ubicacion: _currentBahiaId ?? 'BT000', isNew: true);
                     setState(() {
                       _newProducts.add(newEntry);
                       _productos.add(newEntry);
@@ -402,7 +431,7 @@ class _ReciboScreenState extends State<ReciboScreen> {
                     style: const TextStyle(color: colorWhite, fontSize: 13),
                   ),
                     Text(
-                      'Stock: ${producto.stockNum} u/d',
+                      'Stock: ${producto.stockNum} u/d (pv:${producto.niveles['pv'] ?? 0} | over:${producto.niveles['over'] ?? 0})',
                       style: const TextStyle(color: colorWhite, fontSize: 13),
                     ),
                 ],
@@ -427,12 +456,38 @@ class _ReciboScreenState extends State<ReciboScreen> {
                     children: [
                       ElevatedButton(
                         onPressed: () async {
-                          // decrementar mediante diálogo de cantidad a reducir
+                          // Al presionar '-', pedimos cantidad, nivel y motivo -> registrar baja
                           final qty = await _askQuantityDialog(initial: 1);
-                          if (qty == null) return;
+                          if (qty == null || qty <= 0) return;
+
+                          // Pedir nivel (pv/over)
+                          final nivel = await showDialog<String?>(
+                            context: context,
+                            builder: (context) => SimpleDialog(
+                              title: const Text('Selecciona nivel'),
+                              children: [
+                                SimpleDialogOption(onPressed: () => Navigator.of(context).pop('pv'), child: const Text('pv')),
+                                SimpleDialogOption(onPressed: () => Navigator.of(context).pop('over'), child: const Text('over')),
+                                TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancelar', style: TextStyle(color: colorBlack))),
+                              ],
+                            ),
+                          );
+                          if (nivel == null) return;
+
+                          // Pedir motivo similar al flujo de eliminación
+                          final motivo = await _promptActionForProduct();
+                          if (motivo == null) return;
+
+                          // Registrar en bajas locales y ajustar cantidades en la UI
                           setState(() {
-                            producto.stockNum = (producto.stockNum - qty) < 0 ? 0 : producto.stockNum - qty;
+                            // agregar registro para ser enviado en el guardado
+                            _toDeleteProducts.add({'suk': producto.suk, 'cantidad': qty, 'nivel': nivel, 'motivo': motivo});
+
+                            // ajustar cantidad localmente
+                            final current = producto.niveles[nivel] ?? 0;
+                            producto.niveles[nivel] = (current - qty) < 0 ? 0 : (current - qty);
                           });
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Registrada baja local para ${producto.suk}: $qty en $nivel')));
                         },
                         style: ElevatedButton.styleFrom(
                           shape: const CircleBorder(),
@@ -445,11 +500,23 @@ class _ReciboScreenState extends State<ReciboScreen> {
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () async {
-                          // incrementar mediante diálogo de cantidad a agregar
+                          // incrementar mediante diálogo de cantidad a agregar (elegir nivel)
                           final qty = await _askQuantityDialog(initial: 1);
-                          if (qty == null) return;
+                          if (qty == null || qty <= 0) return;
+                          final nivel = await showDialog<String?>(
+                            context: context,
+                            builder: (context) => SimpleDialog(
+                              title: const Text('Selecciona nivel'),
+                              children: [
+                                SimpleDialogOption(onPressed: () => Navigator.of(context).pop('pv'), child: const Text('pv')),
+                                SimpleDialogOption(onPressed: () => Navigator.of(context).pop('over'), child: const Text('over')),
+                                TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancelar', style: TextStyle(color: colorBlack))),
+                              ],
+                            ),
+                          );
+                          if (nivel == null) return;
                           setState(() {
-                            producto.stockNum = producto.stockNum + qty;
+                            producto.niveles[nivel] = (producto.niveles[nivel] ?? 0) + qty;
                           });
                         },
                         style: ElevatedButton.styleFrom(
@@ -480,28 +547,55 @@ class _ReciboScreenState extends State<ReciboScreen> {
       final controlador = ControladorSurtido();
 
 
-      // Procesar productos marcados para eliminación
-      for (final pid in _toDeleteIds) {
-        final ok = await controlador.deleteProduct(_currentBahiaId!, pid);
+      // Procesar productos marcados para eliminación: registrar baja en auditoría/DB
+      final int usuarioId = (widget.user?['id'] as int?) ?? 0;
+      if (usuarioId == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error: Usuario no identificado')));
+        return;
+      }
+      for (final prod in _toDeleteProducts) {
+        final String suk = prod['suk']?.toString() ?? '';
+        final int productoId = int.tryParse(suk) ?? 0;
+        if (productoId == 0) continue;
+    final String motivo = (prod['motivo']?.toString().isNotEmpty == true)
+      ? prod['motivo'].toString()
+      : (_markedActions[suk] ?? 'Sin motivo');
+        final String nivel = prod['nivel']?.toString() ?? 'over';
+        final int cantidad = (prod['cantidad'] is int) ? prod['cantidad'] as int : int.tryParse('${prod['cantidad']}') ?? 0;
+
+        final ok = await controlador.registrarBajaProducto(
+          usuarioId: usuarioId,
+          productoId: productoId,
+          ubicacionId: _currentBahiaId!,
+          nivel: nivel,
+          cantidad: cantidad,
+          motivo: motivo,
+        );
+
         if (!ok) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error eliminando producto $pid')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error registrando baja producto $suk')));
         }
       }
 
-      // Procesar existentes: actualizar cantidad (asumimos nivel 'over' para recibo)
+      // Procesar existentes: actualizar cantidad por nivel (pv y over)
       for (final p in _productos.where((p) => !p.isNew)) {
-        await controlador.createOrUpdateLevel(_currentBahiaId!, p.suk, 'over', p.stockNum);
+        final pv = p.niveles['pv'] ?? 0;
+        final over = p.niveles['over'] ?? 0;
+        await controlador.createOrUpdateLevel(_currentBahiaId!, p.suk, 'pv', pv);
+        await controlador.createOrUpdateLevel(_currentBahiaId!, p.suk, 'over', over);
       }
 
       // Procesar nuevos productos: insertar en la bahía (usamos _newProducts para evitar duplicados)
       for (final p in _newProducts) {
-        await controlador.createProductEntries(_currentBahiaId!, p.suk, stockPv: p.stockNum);
+        final pv = p.niveles['pv'] ?? 0;
+        final over = p.niveles['over'] ?? 0;
+        await controlador.createProductEntries(_currentBahiaId!, p.suk, stockPv: pv, stockOver: over);
       }
 
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Operación completada')));
     // Limpiar listas locales y recargar
-    _newProducts.clear();
-    _toDeleteIds.clear();
+  _newProducts.clear();
+  _toDeleteProducts.clear();
     await _fetchProductsForBay(_currentBahiaId!);
     Navigator.of(context).pop(); // volver a la vista anterior
     }

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/BaseDeDatosLocal/SupabaseConfig.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:stockflow/Vista/Login.dart' show LoginPage;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Inicializar formatos de fecha para español
+  await initializeDateFormatting('es_MX', null);
   await SupabaseConfig.init(); // Inicializamos Supabase
 
   runApp(const MyApp());

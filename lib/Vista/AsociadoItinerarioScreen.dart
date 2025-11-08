@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/Controlador/ControladorItinerarioJefe.dart';
+import 'package:stockflow/Controlador/ControladorBahias.dart';
+import 'package:stockflow/Vista/EvaluacionChecklistScreen.dart'; // nueva pantalla de evaluación
 
 // Colores del proyecto
 const Color colorOrange = Color(0xFFF88033);
@@ -22,6 +24,10 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
   bool _loading = true;
   List<Map<String, dynamic>> _tareas = [];
   List<Map<String, dynamic>> _sinAsignar = [];
+  // --- AÑADIR ESTAS LÍNEAS ---
+  int _controlTotalBahias = 0;
+  int _controlCompletadasBahias = 0;
+  // --- FIN ---
 
   @override
   void initState() {
@@ -33,9 +39,27 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
     setState(() => _loading = true);
     final tareas = await ControladorItinerarioJefe.obtenerTareasPorUsuario(widget.asociadoId);
     final sinAsignar = await ControladorItinerarioJefe.listarTareasSinAsignar();
+    // --- AÑADIR ESTO ---
+    // Usamos el controlador de Bahias para traer el resumen
+    final controlData = await ControladorBahias.obtenerUltimoControlUsuario(widget.asociadoId);
     if (mounted) setState(() {
       _tareas = tareas;
       _sinAsignar = sinAsignar;
+      // --- AÑADIR ESTA LÓGICA ---
+      if (controlData != null) {
+        // Usamos 'total_bahias' y 'completadas' de la tabla control_bahias
+        _controlTotalBahias = (controlData['total_bahias'] is num)
+            ? (controlData['total_bahias'] as num).toInt()
+            : 0;
+        _controlCompletadasBahias = (controlData['completadas'] is num)
+            ? (controlData['completadas'] as num).toInt()
+            : 0;
+      } else {
+        // Si no hay registro, lo dejamos en 0
+        _controlTotalBahias = 0;
+        _controlCompletadasBahias = 0;
+      }
+      // --- FIN ---
       _loading = false;
     });
   }
@@ -46,18 +70,25 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Agrupaciones necesarias para construir las listas
     final pendientes = _groupByEstado('pendiente');
     final enpro = _groupByEstado('en_progreso');
     final completadas = _groupByEstado('completada');
-    final total = _tareas.length;
-    final done = completadas.length;
-    final porcentaje = total == 0 ? 0.0 : (done / total);
+    final revisadas = _groupByEstado('revisada');
+    // Usamos los datos de control_bahias para el gráfico de avance
+    final int total = _controlTotalBahias;
+    final int done = _controlCompletadasBahias;
+    final double porcentaje = (total == 0) ? 0.0 : (done / total).clamp(0.0, 1.0);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Asociado #${widget.asociadoId}'),
-        backgroundColor: colorOrange,
+
+      
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(68.0),
+        child: SafeArea(child: _buildHeader(context)),
       ),
+
+
       backgroundColor: colorBackgroundScaffold,
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -135,6 +166,10 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
                   const Text('Completadas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ...completadas.map(_buildTaskTileCompletada).toList(),
+                  const SizedBox(height: 12),
+                  const Text('Revisadas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  ...revisadas.map(_buildTaskTileRevisada).toList(),
                   const SizedBox(height: 20),
 
                   const Divider(),
@@ -193,9 +228,44 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
         trailing: TextButton(
           child: const Text('Evaluar'),
           onPressed: () async {
-            final result = await _showEvaluacionDialog(id as int);
-            if (result == true) await _loadAll();
+            // Navegamos a la nueva pantalla de evaluación completa
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EvaluacionChecklistScreen(
+                  tareaId: id as int,
+                  evaluadorUser: widget.jefeUser ?? {}, // Pasamos el usuario jefe
+                ),
+              ),
+            );
+            // Si la evaluación se guardó (pop(true)), recargamos la lista
+            if (result == true) {
+              await _loadAll();
+            }
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskTileRevisada(Map<String, dynamic> tarea) {
+    final ubicacion = tarea['ubicacion_id'] ?? 'N/D';
+    // Obtener la calificación de forma segura
+    final calificacionRaw = tarea['calificacion'];
+    final double calificacion = (calificacionRaw is num)
+        ? calificacionRaw.toDouble()
+        : double.tryParse(calificacionRaw.toString()) ?? 0.0;
+    return Card(
+      color: colorWhite,
+      child: ListTile(
+        title: Text('Bahía: $ubicacion'),
+        subtitle: Text('Estado: Revisada'),
+        trailing: Chip(
+          label: Text(
+            'Cal: ${calificacion.toStringAsFixed(1)}',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: colorOrange,
         ),
       ),
     );
@@ -220,55 +290,39 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
     );
   }
 
-  Future<bool> _showEvaluacionDialog(int tareaId) async {
-    final TextEditingController comentarioCtrl = TextEditingController();
-    double puntaje = 8.0;
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => StatefulBuilder(
-            builder: (context, setState) => AlertDialog(
-              title: const Text('Evaluación de checklist'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(controller: comentarioCtrl, decoration: const InputDecoration(labelText: 'Comentarios')),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Text('Puntaje:'),
-                      Expanded(
-                        child: Slider(
-                          value: puntaje,
-                          min: 0,
-                          max: 10,
-                          divisions: 20,
-                          onChanged: (v) {
-                            setState(() {
-                              puntaje = v;
-                            });
-                          },
-                        ),
-                      ),
-                      Text(puntaje.toStringAsFixed(1)),
-                    ],
-                  ),
-                ],
+  
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+      child: Row(
+        children: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorOrange.withOpacity(0.1),
+              shape: const CircleBorder(),
+              minimumSize: const Size(40, 40),
+              padding: EdgeInsets.zero,
+              elevation: 0,
+            ),
+            child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              'Asociado #${widget.asociadoId}',
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: colorBlack,
               ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                ElevatedButton(
-                  onPressed: () async {
-                    final evaluador = widget.jefeUser != null && widget.jefeUser!['id'] != null ? (widget.jefeUser!['id'] is int ? widget.jefeUser!['id'] as int : int.tryParse('${widget.jefeUser!['id']}') ?? 0) : 0;
-                    final ok = await ControladorItinerarioJefe.evaluarTarea(tareaId, evaluador, comentarioCtrl.text, puntaje);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'Evaluación registrada' : 'Error al registrar evaluación')));
-                    Navigator.pop(context, ok);
-                  },
-                  child: const Text('Guardar'),
-                ),
-              ],
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        ) ??
-        false;
+        ],
+      ),
+    );
+
   }
 }

@@ -203,6 +203,44 @@ class ControladorItinerario {
     }
   }
 
+  /// Obtiene una tarea con su campo checklist (si existe)
+  static Future<Map<String, dynamic>?> obtenerTareaConChecklist(int tareaId) async {
+    try {
+      final resp = await SupabaseConfig.client.from('tareas').select('id,checklist').eq('id', tareaId).maybeSingle();
+      if (resp == null) return null;
+      return Map<String, dynamic>.from(resp as Map);
+    } catch (e) {
+      print('Error obtenerTareaConChecklist: $e');
+      return null;
+    }
+  }
+
+  /// Guarda una evaluación completa (inserta en evaluaciones y actualiza la tarea).
+  static Future<bool> guardarEvaluacion({required int tareaId, required int evaluadorId, required double puntaje, required String comentarios, required Map<String, dynamic> checklistEvaluador}) async {
+    try {
+      // Insertar la evaluación con el checklist del evaluador (se almacenará como jsonb)
+      await SupabaseConfig.client.from('evaluaciones').insert({
+        'tarea_id': tareaId,
+        'evaluador_id': evaluadorId,
+        'comentarios': comentarios,
+        'puntaje': puntaje,
+        'checklist_evaluador': checklistEvaluador,
+      });
+
+      // Actualizar la tarea: evaluado_por, calificacion y estado
+      await SupabaseConfig.client.from('tareas').update({
+        'evaluado_por': evaluadorId,
+        'calificacion': puntaje,
+        'estado': 'revisada',
+      }).eq('id', tareaId);
+
+      return true;
+    } catch (e) {
+      print('Error guardarEvaluacion: $e');
+      return false;
+    }
+  }
+
   /// Obtiene los productos asociados a una ubicación que son rango A/B/C
   /// o que tienen `cambio_precio = true`.
   static Future<List<Map<String, dynamic>>> obtenerProductosParaSurtido(String ubicacionId) async {

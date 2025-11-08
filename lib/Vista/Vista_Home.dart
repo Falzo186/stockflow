@@ -12,6 +12,10 @@ import 'package:stockflow/Controlador/ControladorBahias.dart';
 import 'package:stockflow/Controlador/ControladorLogin.dart';
 import 'package:stockflow/Vista/Login.dart';
 import 'package:stockflow/Controlador/ControladorItinerarioJefe.dart';
+import 'package:stockflow/Vista/ReporteAsociadosScreen.dart';
+import 'package:stockflow/Vista/ReporteBajasScreen.dart';
+import 'package:stockflow/Vista/ReporteHorariosScreen.dart';
+import 'package:stockflow/Vista/MiPerfilScreen.dart';
 
 // 🎨 Definición de Colores
 const Color colorOrange = Color(0xFFF88033);
@@ -112,12 +116,74 @@ class _PaginaPrincipal2State extends State<PaginaPrincipal2> {
               const SizedBox(height: 20),
               _crearBotonesSuperiores(context, colorCardBackground, colorBlack),
               const SizedBox(height: 20),
+              // INICIO DE LA MODIFICACIÓN
+              if (_isJefe) ...[
+                _crearSeccionReportes(context),
+                const SizedBox(height: 20),
+              ],
+              // FIN DE LA MODIFICACIÓN
+
               _crearSeccionAvance(colorCardBackground, colorBlack),
               const SizedBox(height: 20),
               _crearSeccionSurtido(context, colorCardBackground, colorBlack),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _crearSeccionReportes(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+      decoration: BoxDecoration(
+        color: colorCardBackground,
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: ExpansionTile(
+        leading: const Icon(Icons.assessment, color: colorWhite),
+        title: const Text(
+          'Reportes',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorWhite),
+        ),
+        iconColor: colorOrange,
+        collapsedIconColor: colorWhite,
+        childrenPadding: const EdgeInsets.only(left: 15, bottom: 10),
+        children: [
+          ListTile(
+            leading: const Icon(Icons.people, color: colorWhite),
+            title: const Text('Asociados', style: TextStyle(color: colorWhite)),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ReporteAsociadosScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.trending_down, color: colorWhite),
+            title: const Text('Bajas', style: TextStyle(color: colorWhite)),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ReporteBajasScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.schedule, color: colorWhite),
+            title: const Text('Horarios', style: TextStyle(color: colorWhite)),
+            onTap: () {
+              final int adminId = (widget.user?['id'] is int) ? (widget.user!['id'] as int) : 0;
+              if (adminId > 0) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ReporteHorariosScreen(adminId: adminId)),
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -333,21 +399,38 @@ class _PaginaPrincipal2State extends State<PaginaPrincipal2> {
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    // Cerrar sesión: limpiar preferencias y volver a Login
-                    await ControladorLogin.logout();
-                    if (!mounted) return;
-                    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage(clearRemembered: true)));
-                  },
-                  icon: const Icon(Icons.logout, size: 18, color: colorWhite),
-                  label: const Text('Cerrar sesión',
-                      style: TextStyle(color: colorWhite)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: btnColor,
-                    shape: const StadiumBorder(),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
+                Row(
+                  children: [
+                    // Botón para ver el perfil del usuario
+                    TextButton(
+                      onPressed: () {
+                        if (widget.user == null) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MiPerfilScreen(user: widget.user!),
+                          ),
+                        );
+                      },
+                      child: const Text('Ver mi Perfil', style: TextStyle(color: colorOrange)),
+                    ),
+                    const Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        // Cerrar sesión: limpiar preferencias y volver a Login
+                        await ControladorLogin.logout();
+                        if (!mounted) return;
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginPage(clearRemembered: true)));
+                      },
+                      icon: const Icon(Icons.logout, size: 18, color: colorWhite),
+                      label: const Text('Cerrar sesión', style: TextStyle(color: colorWhite)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: btnColor,
+                        shape: const StadiumBorder(),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -459,12 +542,9 @@ class _PaginaPrincipal2State extends State<PaginaPrincipal2> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ReciboScreen(),
+                  builder: (context) => ReciboScreen(user: widget.user),
                 ),
               );
-
-
-              
             },
           ),
         ],

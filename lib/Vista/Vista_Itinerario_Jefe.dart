@@ -129,33 +129,32 @@ class _ItinerarioProgresoScreenState extends State<ItinerarioProgresoScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: ElevatedButton(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: Row(
+        children: [
+          ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
+              backgroundColor: colorOrange.withOpacity(0.1),
               shape: const CircleBorder(),
-              backgroundColor: colorWhite,
-              side: const BorderSide(color: colorOrange, width: 2),
-              minimumSize: const Size(45, 45),
+              minimumSize: const Size(40, 40),
               padding: EdgeInsets.zero,
-              elevation: 2,
+              elevation: 0,
             ),
-            child: const Icon(Icons.arrow_back, color: colorOrange),
+            child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
           ),
-        ),
-        const Text(
-          'Itinerario',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w400,
-            color: colorBlack,
+          const SizedBox(width: 15),
+          const Text(
+            'Itinerario',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: colorBlack,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
