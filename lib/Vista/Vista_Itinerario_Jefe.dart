@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/Controlador/ControladorItinerarioJefe.dart';
-import 'package:stockflow/Vista/AsociadoItinerarioScreen.dart';
+import 'package:stockflow/Vista/Vista_itinerarioAsociadotareas.dart';
 
 // --- Definición de Colores ---
 const Color colorOrange = Color(0xFFF88033);

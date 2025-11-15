@@ -1,21 +1,21 @@
 // Archivo: lib/Vista/HomeScreen.dart (o como se llame tu primer archivo)
 
 import 'package:flutter/material.dart';
+import 'package:stockflow/Vista/Vista_Escaner.dart';
 import 'package:stockflow/Vista/Vista_ItinerarioAsociado.dart';
 import 'package:stockflow/Vista/Vista_Itinerario_Jefe.dart';
-import 'package:stockflow/Vista/PaginaEscaner.dart' show PaginaEscaner;
-import 'package:stockflow/Vista/Surtido.dart';
+import 'package:stockflow/Vista/Vista_Login.dart';
+import 'package:stockflow/Vista/Vista_MiPerfil.dart';
 import 'dart:math' as math;
 
 import 'package:stockflow/Vista/Vista_Recibo.dart'; // Necesario para el gráfico
 import 'package:stockflow/Controlador/ControladorBahias.dart';
 import 'package:stockflow/Controlador/ControladorLogin.dart';
-import 'package:stockflow/Vista/Login.dart';
 import 'package:stockflow/Controlador/ControladorItinerarioJefe.dart';
-import 'package:stockflow/Vista/ReporteAsociadosScreen.dart';
-import 'package:stockflow/Vista/ReporteBajasScreen.dart';
-import 'package:stockflow/Vista/ReporteHorariosScreen.dart';
-import 'package:stockflow/Vista/MiPerfilScreen.dart';
+import 'package:stockflow/Vista/Vista_ReporteAsociados.dart';
+import 'package:stockflow/Vista/Vista_ReporteBajas.dart';
+import 'package:stockflow/Vista/Vista_ReporteHorarios.dart';
+import 'package:stockflow/Vista/Vista_Surtido.dart';
 
 // 🎨 Definición de Colores
 const Color colorOrange = Color(0xFFF88033);

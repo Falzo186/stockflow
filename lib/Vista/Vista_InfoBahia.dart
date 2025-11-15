@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:stockflow/Vista/GuiaSurtido.dart';
 import 'package:stockflow/Vista/Vista_CheckListBahia.dart';
 import 'package:stockflow/Controlador/ControladorItinerario.dart';
 
 // --- Para formateo de fechas
 import 'package:intl/intl.dart' as intl;
+import 'package:stockflow/Vista/Vista_GuiaSurtido.dart';
 
 // --- Definición de Colores ---
 const Color colorOrange = Color(0xFFF88033);

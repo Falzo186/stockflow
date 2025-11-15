@@ -88,7 +88,7 @@ class _ItinerarioBahiasScreenState extends State<ItinerarioBahiasScreen> {
                     for (final t in _tareas)
                       itw.TaskButton(
                         name: '${t['ubicacion_id'] ?? 'Sin Ubicación'}',
-                        progress: (t['estado'] == 'completada') ? 1.0 : (t['estado'] == 'en_progreso' ? 0.5 : 0.0),
+                        progress: ((t['estado'] == 'completada' || t['estado'] == 'revisada') ? 1.0 : (t['estado'] == 'en_progreso' ? 0.5 : 0.0)),
                         status: '${t['estado']}',
                         onTap: () => _onTapTarea(t),
                       ),

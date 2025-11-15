@@ -284,9 +284,11 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 4.0),
           child: OutlinedButton(
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all(selected ? selColor.withOpacity(0.14) : selColor.withOpacity(0.06)),
+              // When selected show a solid color background, otherwise a very light tint
+              backgroundColor: MaterialStateProperty.all(selected ? selColor : selColor.withOpacity(0.06)),
               side: MaterialStateProperty.all(BorderSide(color: selColor)),
-              foregroundColor: MaterialStateProperty.all(selColor),
+              // Force icons/text to be black by default
+              foregroundColor: MaterialStateProperty.all(Colors.black),
               minimumSize: MaterialStateProperty.all(const Size.fromHeight(40)),
               shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))),
             ),
@@ -300,7 +302,7 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
     final List<Widget> options = [];
     if (item.tieneNA) {
       options.add(buildOption(
-        child: Text('N/A', style: TextStyle(color: colorBlue, fontWeight: isSelected[0] ? FontWeight.w700 : FontWeight.w500)),
+        child: Text('N/A', style: TextStyle(color: Colors.black, fontWeight: isSelected[0] ? FontWeight.w700 : FontWeight.w500)),
         selected: isSelected[0],
         selColor: colorBlue,
         onPressed: () {
@@ -316,7 +318,7 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
     // X button (No)
     final int idxNo = item.tieneNA ? 1 : 0;
     options.add(buildOption(
-      child: Icon(Icons.close, color: colorRed),
+      child: const Icon(Icons.close),
       selected: isSelected[idxNo],
       selColor: colorRed,
       onPressed: () {
@@ -331,7 +333,7 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
     // Check button (Si)
     final int idxSi = item.tieneNA ? 2 : 1;
     options.add(buildOption(
-      child: Icon(Icons.check, color: colorGreen),
+      child: const Icon(Icons.check),
       selected: isSelected[idxSi],
       selColor: colorGreen,
       onPressed: () {
@@ -382,7 +384,7 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      color: const Color.fromARGB(193, 250, 199, 167),
+      color: colorOrange,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
         child: Row(
@@ -390,13 +392,13 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: colorOrange.withOpacity(0.1),
+                backgroundColor: Colors.white.withOpacity(0.12),
                 shape: const CircleBorder(),
                 minimumSize: const Size(40, 40),
                 padding: EdgeInsets.zero,
                 elevation: 0,
               ),
-              child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
+              child: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
             ),
             const SizedBox(width: 15),
             Expanded(
@@ -405,7 +407,7 @@ class _ChecklistBahiaScreenState extends State<ChecklistBahiaScreen> {
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: colorBlack,
+                  color: Colors.white,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/Controlador/ControladorItinerarioJefe.dart';
-import 'package:stockflow/Vista/ReporteDetalleAsociadoScreen.dart';
+import 'package:stockflow/Vista/Vista_ReporteDetalleAsociado.dart';
 
 // Colores
 const Color colorOrange = Color(0xFFF88033);

@@ -293,7 +293,7 @@ class ControladorItinerario {
         final estado = (lastTask['estado'] ?? '').toString();
         if (estado == 'pendiente') progress = 0;
         else if (estado == 'en_progreso') progress = 50;
-        else if (estado == 'completada') progress = 100;
+        else if (estado == 'completada' || estado == 'revisada') progress = 100;
         else progress = 0;
       }
 

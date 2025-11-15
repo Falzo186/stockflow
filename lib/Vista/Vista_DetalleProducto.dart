@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:stockflow/Modelo/ProductoUbicacion.dart';
-import 'package:stockflow/Vista/PaginaUbicaciones.dart';
+import 'package:stockflow/Vista/Vista_Ubicaciones.dart';
 import '../Modelo/Producto.dart';
 
 // Colores del proyecto (reutilizables)

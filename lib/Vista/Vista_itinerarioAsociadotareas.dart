@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/Controlador/ControladorItinerarioJefe.dart';
 import 'package:stockflow/Controlador/ControladorBahias.dart';
-import 'package:stockflow/Vista/EvaluacionChecklistScreen.dart'; // nueva pantalla de evaluación
+import 'package:stockflow/Vista/Vista_EvaluacionChecklist.dart';
 
 // Colores del proyecto
 const Color colorOrange = Color(0xFFF88033);
@@ -73,8 +73,8 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
     // Agrupaciones necesarias para construir las listas
     final pendientes = _groupByEstado('pendiente');
     final enpro = _groupByEstado('en_progreso');
-    final completadas = _groupByEstado('completada');
-    final revisadas = _groupByEstado('revisada');
+    // Considerar 'revisada' como completada a efectos de avance
+    final completadas = _tareas.where((t) => ((t['estado'] ?? '') == 'completada') || ((t['estado'] ?? '') == 'revisada')).toList();
     // Usamos los datos de control_bahias para el gráfico de avance
     final int total = _controlTotalBahias;
     final int done = _controlCompletadasBahias;
@@ -167,10 +167,6 @@ class _AsociadoItinerarioScreenState extends State<AsociadoItinerarioScreen> {
                   const SizedBox(height: 8),
                   ...completadas.map(_buildTaskTileCompletada).toList(),
                   const SizedBox(height: 12),
-                  const Text('Revisadas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  ...revisadas.map(_buildTaskTileRevisada).toList(),
-                  const SizedBox(height: 20),
 
                   const Divider(),
                   const SizedBox(height: 8),

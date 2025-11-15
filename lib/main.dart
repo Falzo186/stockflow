@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stockflow/BaseDeDatosLocal/SupabaseConfig.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:stockflow/Vista/Login.dart' show LoginPage;
+import 'package:stockflow/Vista/Vista_Login.dart' show LoginPage;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

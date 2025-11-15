@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:stockflow/Vista/PaginaCarga.dart';
 import 'package:stockflow/Controlador/ControladorLogin.dart';
+import 'package:stockflow/Vista/Vista_PaginaCarga.dart';
 
 class LoginPage extends StatefulWidget {
   final bool clearRemembered;
