@@ -138,9 +138,9 @@ class _EvaluacionChecklistScreenState extends State<EvaluacionChecklistScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 4.0),
           child: OutlinedButton(
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all(selected ? selColor.withOpacity(0.14) : selColor.withOpacity(0.06)),
+              backgroundColor: MaterialStateProperty.all(selected ? selColor : selColor.withOpacity(0.06)),
               side: MaterialStateProperty.all(BorderSide(color: selColor)),
-              foregroundColor: MaterialStateProperty.all(selColor),
+              foregroundColor: MaterialStateProperty.all(Colors.black),
               minimumSize: MaterialStateProperty.all(const Size.fromHeight(40)),
               shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))),
             ),
@@ -154,7 +154,7 @@ class _EvaluacionChecklistScreenState extends State<EvaluacionChecklistScreen> {
     final List<Widget> options = [];
     if (item.tieneNA) {
       options.add(buildOption(
-        child: Text('N/A', style: TextStyle(color: colorBlue, fontWeight: isSelected[0] ? FontWeight.w700 : FontWeight.w500)),
+        child: Text('N/A', style: TextStyle(color: Colors.black, fontWeight: isSelected[0] ? FontWeight.w700 : FontWeight.w500)),
         selected: isSelected[0],
         selColor: colorBlue,
         onPressed: () {
@@ -170,7 +170,7 @@ class _EvaluacionChecklistScreenState extends State<EvaluacionChecklistScreen> {
     // No (X)
     final int idxNo = item.tieneNA ? 1 : 0;
     options.add(buildOption(
-      child: const Icon(Icons.close, color: Color(0xFFD32F2F)),
+      child: const Icon(Icons.close),
       selected: isSelected[idxNo],
       selColor: colorRed,
       onPressed: () {
@@ -185,7 +185,7 @@ class _EvaluacionChecklistScreenState extends State<EvaluacionChecklistScreen> {
     // Si (check)
     final int idxSi = item.tieneNA ? 2 : 1;
     options.add(buildOption(
-      child: const Icon(Icons.check, color: Color(0xFF2E7D32)),
+      child: const Icon(Icons.check),
       selected: isSelected[idxSi],
       selColor: colorGreen,
       onPressed: () {
@@ -263,33 +263,33 @@ class _EvaluacionChecklistScreenState extends State<EvaluacionChecklistScreen> {
         preferredSize: const Size.fromHeight(68.0),
         child: SafeArea(
           child: Container(
-            color: const Color.fromARGB(193, 250, 199, 167),
+            color: colorOrange,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-              child: Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorOrange.withOpacity(0.1),
-                      shape: const CircleBorder(),
-                      minimumSize: const Size(40, 40),
-                      padding: EdgeInsets.zero,
-                      elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                child: Row(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.12),
+                        shape: const CircleBorder(),
+                        minimumSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
+                        elevation: 0,
+                      ),
+                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
                     ),
-                    child: const Icon(Icons.arrow_back, color: colorOrange, size: 28),
-                  ),
-                  const SizedBox(width: 15),
-                  const Expanded(
-                    child: Text(
-                      'Evaluar Bahía',
-                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF000000)),
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 15),
+                    const Expanded(
+                      child: Text(
+                        'Evaluar Bahía',
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ),
         ),
       ),
